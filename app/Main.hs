@@ -7,8 +7,9 @@ import Brick.Widgets.Center (center)
 import Brick.Widgets.Border (borderWithLabel, vBorder)
 import Brick.Widgets.Border.Style (unicode)
 import qualified Graphics.Vty as V
+import Graphics.Vty.CrossPlatform (mkVty)
 import Graphics.Vty.Config (VtyUserConfig(..), defaultConfig)
-import Graphics.Vty.Config.ColorMode (ColorMode(..))
+import Graphics.Vty.Attributes.Color (ColorMode(..))
 
 ui :: Widget ()
 ui =
@@ -44,6 +45,7 @@ app =
 main :: IO ()
 main = do
     let buildVty = do
-            config <- defaultConfig
-            V.mkVty $ config { configPreferredColorMode = FullColor }
-    void $ customMain buildVty Nothing app 1
+            mkVty $ defaultConfig { configPreferredColorMode = Just FullColor }
+    --let buildVty = Graphics.Vty.CrossPlatform.mkVty Graphics.Vty.Config.defaultConfig
+    initialVty <- buildVty
+    void $ customMain initialVty buildVty Nothing app 1

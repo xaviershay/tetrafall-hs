@@ -37,6 +37,7 @@ library
       base >=4.7 && <5
     , brick >=2.9
     , vty >=6.4
+    , vty-crossplatform >=0.4
   default-language: Haskell2010
 
 executable tetrafall-hs-exe
@@ -53,6 +54,7 @@ executable tetrafall-hs-exe
     , brick >=2.9
     , tetrafall-hs
     , vty >=6.4
+    , vty-crossplatform >=0.4
   default-language: Haskell2010
 
 test-suite tetrafall-hs-test
@@ -70,4 +72,5 @@ test-suite tetrafall-hs-test
     , brick >=2.9
     , tetrafall-hs
     , vty >=6.4
+    , vty-crossplatform >=0.4
   default-language: Haskell2010
