@@ -37,13 +37,21 @@ playfield grid =
     (border $
     --hLimit 10 $
     --vLimit 22 $
-    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (view contents grid))) <+> (border $ str "12345")
+    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (view contents (doubleGrid grid)))) <+> (border $ str "12345")
 
 formatCell Empty = str " "
 formatCell _ = str "█"
 
---scaleGrid :: Grid -> Int -> Grid
---scaleGrid = _
+doubleGrid :: Grid ->  Grid
+doubleGrid grid = Grid
+  { _dimensions = (w * 2, h * 2)
+  , _contents = V.fromList $ concatMap doubleRow (V.toList originalContents)
+  }
+  where
+    (w, h) = view dimensions grid
+    originalContents = view contents grid
+    doubleRow row = [doubledRow, doubledRow]
+      where doubledRow = V.fromList $ concatMap (\cell -> [cell, cell]) (V.toList row)
 
 appEvent :: BrickEvent () e -> EventM () AppState ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
