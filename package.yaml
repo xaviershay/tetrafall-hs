@@ -5,6 +5,7 @@ license:             BSD-3-Clause
 author:              "Author name here"
 maintainer:          "example@example.com"
 copyright:           "2025 Author name here"
+spec-version: 0.36.0
 
 extra-source-files:
 - README.md
@@ -21,8 +22,10 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
-- brick >= 2.9
-- vty >= 6.4
+- brick >= 2.4
+- microlens-platform
+- vector
+- vty >= 6.2
 - vty-crossplatform >= 0.4
 
 ghc-options:
@@ -40,6 +43,16 @@ library:
   source-dirs: src
 
 executables:
+  tetrafall:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - tetrafall-hs
+
   tetrafall-color-test:
     main:                ColorTest.hs
     source-dirs:         app

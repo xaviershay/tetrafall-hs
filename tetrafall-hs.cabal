@@ -26,51 +26,65 @@ source-repository head
 library
   exposed-modules:
       Lib
-  other-modules:
-      Paths_tetrafall_hs
-  autogen-modules:
-      Paths_tetrafall_hs
+      Tetrafall.Types
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
-    , brick >=2.9
-    , vty >=6.4
+    , brick >=2.4
+    , microlens-platform
+    , vector
+    , vty >=6.2
+    , vty-crossplatform >=0.4
+  default-language: Haskell2010
+
+executable tetrafall
+  main-is: Main.hs
+  other-modules:
+      ColorTest
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , brick >=2.4
+    , microlens-platform
+    , tetrafall-hs
+    , vector
+    , vty >=6.2
     , vty-crossplatform >=0.4
   default-language: Haskell2010
 
 executable tetrafall-color-test
   main-is: ColorTest.hs
   other-modules:
-      Paths_tetrafall_hs
-  autogen-modules:
-      Paths_tetrafall_hs
+      Main
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , brick >=2.9
+    , brick >=2.4
+    , microlens-platform
     , tetrafall-hs
-    , vty >=6.4
+    , vector
+    , vty >=6.2
     , vty-crossplatform >=0.4
   default-language: Haskell2010
 
 test-suite tetrafall-hs-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
-  other-modules:
-      Paths_tetrafall_hs
-  autogen-modules:
-      Paths_tetrafall_hs
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , brick >=2.9
+    , brick >=2.4
+    , microlens-platform
     , tetrafall-hs
-    , vty >=6.4
+    , vector
+    , vty >=6.2
     , vty-crossplatform >=0.4
   default-language: Haskell2010

@@ -1,4 +1,4 @@
-module Main (main) where
+module ColorTest (main) where
 
 import Control.Monad (void)
 
