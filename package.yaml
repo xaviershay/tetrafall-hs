@@ -40,8 +40,8 @@ library:
   source-dirs: src
 
 executables:
-  tetrafall-hs-exe:
-    main:                Main.hs
+  tetrafall-color-test:
+    main:                ColorTest.hs
     source-dirs:         app
     ghc-options:
     - -threaded

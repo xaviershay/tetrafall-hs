@@ -40,8 +40,8 @@ library
     , vty-crossplatform >=0.4
   default-language: Haskell2010
 
-executable tetrafall-hs-exe
-  main-is: Main.hs
+executable tetrafall-color-test
+  main-is: ColorTest.hs
   other-modules:
       Paths_tetrafall_hs
   autogen-modules:
