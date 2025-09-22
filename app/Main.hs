@@ -2,10 +2,7 @@ module Main (main) where
 
 import Control.Monad (void)
 
-import Brick -- (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders)
-import Brick.Widgets.Center (center)
-import Brick.Widgets.Border (borderWithLabel, vBorder)
-import Brick.Widgets.Border.Style (unicode)
+import Brick
 import qualified Graphics.Vty as V
 import Graphics.Vty.CrossPlatform (mkVty)
 import Graphics.Vty.Config (VtyUserConfig(..), defaultConfig)
@@ -13,18 +10,12 @@ import Graphics.Vty.Attributes.Color (ColorMode(..))
 
 ui :: Widget ()
 ui =
-    joinBorders $
-    withBorderStyle unicode $
     foldl (<+>) (str "") (map (\i -> withDefAttr (redAttr (i * 2)) $ str " ") [0..100])
-    --str "" <+> (withDefAttr (redAttr 100) $ str " ") <+> str " "
 
 appEvent :: BrickEvent () e -> EventM () Int ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
 appEvent (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt
 appEvent _ = return ()
-
-testColorAttr :: AttrName
-testColorAttr = attrName "testColor"
 
 redAttr :: Int -> AttrName
 redAttr i = attrName ("red-" <> show i)
@@ -44,8 +35,6 @@ app =
 
 main :: IO ()
 main = do
-    let buildVty = do
-            mkVty $ defaultConfig { configPreferredColorMode = Just FullColor }
-    --let buildVty = Graphics.Vty.CrossPlatform.mkVty Graphics.Vty.Config.defaultConfig
+    let buildVty = mkVty $ defaultConfig { configPreferredColorMode = Just FullColor }
     initialVty <- buildVty
     void $ customMain initialVty buildVty Nothing app 1
