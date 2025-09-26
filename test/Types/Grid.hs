@@ -294,4 +294,57 @@ gridTests = testGroup "Grid Tests"
         let grid3 = makeSparse [((-2, -1), "Z")]
         overlap grid1 grid3 @?= False
     ]
+
+  , testGroup "isWithinBounds function"
+    [ testCase "Piece completely within positive bounds" $ do
+        let baseGrid = makeDense (5, 5) 'O'
+        let pieceGrid = makeSparse [((1, 1), 'X'), ((2, 2), 'Y')]
+        isWithinBounds baseGrid pieceGrid @?= True
+
+    , testCase "Piece partially out of bounds - exceeds width" $ do
+        let baseGrid = makeDense (3, 3) 'O'
+        let pieceGrid = makeSparse [((1, 1), 'X'), ((3, 1), 'Y')]
+        isWithinBounds baseGrid pieceGrid @?= False
+
+    , testCase "Piece partially out of bounds - exceeds height" $ do
+        let baseGrid = makeDense (3, 3) 'O'
+        let pieceGrid = makeSparse [((1, 1), 'X'), ((1, 3), 'Y')]
+        isWithinBounds baseGrid pieceGrid @?= False
+
+    , testCase "Piece completely out of bounds - negative coordinates" $ do
+        let baseGrid = makeDense (3, 3) 'O'
+        let pieceGrid = makeSparse [((-1, 0), 'X'), ((0, -1), 'Y')]
+        isWithinBounds baseGrid pieceGrid @?= False
+
+    , testCase "Empty piece grid is always within bounds" $ do
+        let baseGrid = makeDense (3, 3) 'O'
+        let pieceGrid = makeSparse ([] :: [(Coordinate, Char)])
+        isWithinBounds baseGrid pieceGrid @?= True
+
+    , testCase "Base grid with negative coordinates - piece within bounds" $ do
+        let baseGrid = makeSparse [((-2, -2), 'O'), ((0, 0), 'P'), ((1, 1), 'Q')]
+        let pieceGrid = makeSparse [((-1, -1), 'X'), ((0, 0), 'Y')]
+        isWithinBounds baseGrid pieceGrid @?= True
+
+    , testCase "Base grid with negative coordinates - piece out of bounds" $ do
+        let baseGrid = makeSparse [((-2, -2), 'O'), ((0, 0), 'P'), ((1, 1), 'Q')]
+        let pieceGrid = makeSparse [((-3, -1), 'X'), ((0, 0), 'Y')]
+        isWithinBounds baseGrid pieceGrid @?= False
+
+    , testCase "Mixed positive/negative coordinates" $ do
+        let baseGrid = makeSparse [((-1, -1), 'A'), ((2, 2), 'B')]
+        let pieceGrid = makeSparse [((0, 0), 'X'), ((1, 1), 'Y')]
+        isWithinBounds baseGrid pieceGrid @?= True
+
+    , testCase "Piece at exact boundaries - should be within bounds" $ do
+        let baseGrid = makeSparse [((-2, -2), 'O'), ((2, 2), 'P')]
+        let pieceGrid = makeSparse [((-2, -2), 'X'), ((2, 2), 'Y')]
+        isWithinBounds baseGrid pieceGrid @?= True
+
+    , testCase "Dense base grid vs sparse piece with negative coords" $ do
+        -- Dense grids start at (0,0) and only have positive coordinates
+        let baseGrid = makeDense (3, 3) 'O'
+        let pieceGrid = makeSparse [((-1, 0), 'X'), ((1, 1), 'Y')]
+        isWithinBounds baseGrid pieceGrid @?= False
+    ]
   ]

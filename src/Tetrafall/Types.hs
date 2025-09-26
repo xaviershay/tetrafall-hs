@@ -22,8 +22,7 @@ module Tetrafall.Types
   , orientation
   ) where
 
-import qualified Data.Vector as V
-import Data.Vector (Vector)
+
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Hashable (Hashable(..))
 import Lens.Micro.Platform
@@ -40,6 +39,16 @@ instance Hashable TetrominoType where
   hashWithSalt s = hashWithSalt s . fromEnum
 
 data Cell = Empty | Garbage | TetrominoCell TetrominoType
+  deriving (Eq)
+
+instance Semigroup Cell where
+  Empty <> other = other
+  other <> Empty = other
+  _ <> other = other
+
+instance Monoid Cell where
+  mempty = Empty
+
 data Orientation = North | East | South | West
   deriving (Show, Enum)
 
@@ -59,6 +68,7 @@ data Game = Game
 makeLenses ''Game
 
 
+tetrominoI :: Tetromino
 tetrominoI = Tetromino
   { _tetrominoType = I
   , _position = (5, 3)
