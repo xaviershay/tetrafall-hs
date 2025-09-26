@@ -18,7 +18,7 @@ unitTests :: TestTree
 unitTests = testGroup "Example Tests"
   [ testGroup "Basic assertions"
     [ testCase "Equality test" $ 
-        2 + 2 @?= 4
+        2 + 2 @?= (4 :: Int)
     
     , testCase "Boolean assertion" $ 
         assertBool "Should be true" True
@@ -27,17 +27,17 @@ unitTests = testGroup "Example Tests"
         "hello" @?= "hello"
     
     , testCase "List equality" $ 
-        [1, 2, 3] @?= [1, 2, 3]
+        [1 :: Int, 2, 3] @?= [1, 2, 3]
     ]
   
   , testGroup "Property-style tests"
     [ testCase "Addition is commutative" $ do
-        let a = 5
+        let a = 5 :: Int
         let b = 3
         a + b @?= b + a
     
     , testCase "List append properties" $ do
-        let xs = [1, 2]
+        let xs = [1 :: Int, 2]
         let ys = [3, 4]
         length (xs ++ ys) @?= length xs + length ys
     ]
@@ -45,17 +45,17 @@ unitTests = testGroup "Example Tests"
   , testGroup "Exception and error handling"
     [ testCase "Division by zero (should not crash in test)" $ do
         let result = if True then 42 else (5 `div` 0)
-        result @?= 42
+        result @?= (42 :: Int)
     
     , testCase "Empty list operations" $ do
         assertBool "Empty list is null" (null [])
-        length [] @?= 0
+        length [] @?= (0 :: Int)
     ]
   
   , testGroup "Multi-step tests"
     [ testCaseSteps "Step-by-step calculation" $ \step -> do
         step "Setting up initial values"
-        let x = 10
+        let x = 10 :: Int
         let y = 5
         
         step "Performing addition"
@@ -73,7 +73,7 @@ unitTests = testGroup "Example Tests"
   , testGroup "Testing with IO"
     [ testCase "IO operations" $ do
         -- Testing pure values wrapped in IO
-        result <- return (10 * 5)
+        result <- return (10 * 5 :: Int)
         result @?= 50
         
         -- Testing boolean conditions with IO

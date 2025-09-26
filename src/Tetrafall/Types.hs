@@ -59,6 +59,7 @@ makeLenses ''Tetromino
 data Action =
     ActionLeft
   | ActionRight
+  deriving (Eq, Show)
 
 data Game = Game
   { _grid :: Grid Cell

@@ -4,6 +4,7 @@ module Main (main) where
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid (toVector, makeDense, toList, makeSparse, overlap, isWithinBounds, emptyGrid, overlay)
+import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V
 import qualified Data.HashMap.Strict as HM
@@ -79,12 +80,10 @@ step game =
 appEvent :: BrickEvent () Tick -> EventM () Game ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
 appEvent (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt
-appEvent (VtyEvent (V.EvKey V.KLeft [])) = do
-    modify (apply ActionLeft)
-    return ()
-appEvent (VtyEvent (V.EvKey V.KRight [])) = do
-    modify (apply ActionRight)
-    return ()
+appEvent (VtyEvent (V.EvKey key [])) = do
+    case KeyConfig.getActionForKey KeyConfig.defaultConfig key of
+        Just action -> modify (apply action)
+        Nothing -> return ()
 appEvent (AppEvent Tick) = do
     modify step
     return ()
