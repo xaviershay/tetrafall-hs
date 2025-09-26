@@ -1,4 +1,4 @@
-module Tetrafall.Types.Grid (makeDense, makeSparse, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid) where
+module Tetrafall.Types.Grid (makeDense, makeSparse, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise) where
 
 import Tetrafall.Types.Coordinate
 
@@ -147,3 +147,57 @@ isWithinBounds baseGrid pieceGrid =
     let ((baseMinX, baseMinY), (baseMaxX, baseMaxY)) = _extent baseGrid
         pieceCoords = map fst (toList pieceGrid)
     in all (\(x, y) -> x >= baseMinX && x <= baseMaxX && y >= baseMinY && y <= baseMaxY) pieceCoords
+  
+-- Rotate a square grid clockwise around its center
+rotateClockwise :: Grid a -> Grid a
+rotateClockwise grid = 
+    let gridCells = toList grid
+        ((minX, minY), (maxX, maxY)) = _extent grid
+        
+        -- Calculate the center of the square (floating point for precision)
+        centerX = fromIntegral (minX + maxX) / (2.0 :: Double)
+        centerY = fromIntegral (minY + maxY) / (2.0 :: Double)
+        
+        -- Rotate each cell around the center
+        rotatedCells = map (\((x, y), cell) -> 
+            let -- Translate to center
+                relX = fromIntegral x - centerX
+                relY = fromIntegral y - centerY
+                -- Clockwise rotation: (x, y) -> (y, -x)
+                newRelX = relY
+                newRelY = -relX
+                -- Translate back
+                newX = round (newRelX + centerX)
+                newY = round (newRelY + centerY)
+            in ((newX, newY), cell)) gridCells
+        
+    in if null rotatedCells 
+       then emptyGrid (_emptyValue grid)
+       else makeSparse (_emptyValue grid) rotatedCells
+
+-- Rotate a square grid counter-clockwise around its center
+rotateCounterClockwise :: Grid a -> Grid a  
+rotateCounterClockwise grid =
+    let gridCells = toList grid
+        ((minX, minY), (maxX, maxY)) = _extent grid
+        
+        -- Calculate the center of the square (floating point for precision)
+        centerX = fromIntegral (minX + maxX) / (2.0 :: Double)
+        centerY = fromIntegral (minY + maxY) / (2.0 :: Double)
+        
+        -- Rotate each cell around the center
+        rotatedCells = map (\((x, y), cell) -> 
+            let -- Translate to center
+                relX = fromIntegral x - centerX
+                relY = fromIntegral y - centerY
+                -- Counter-clockwise rotation: (x, y) -> (-y, x)
+                newRelX = -relY
+                newRelY = relX
+                -- Translate back
+                newX = round (newRelX + centerX)
+                newY = round (newRelY + centerY)
+            in ((newX, newY), cell)) gridCells
+        
+    in if null rotatedCells
+       then emptyGrid (_emptyValue grid)
+       else makeSparse (_emptyValue grid) rotatedCells

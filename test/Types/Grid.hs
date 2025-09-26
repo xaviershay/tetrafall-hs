@@ -347,4 +347,94 @@ gridTests = testGroup "Grid Tests"
         let pieceGrid = makeSparse mempty [((-1, 0), "X"), ((1, 1), "Y")]
         isWithinBounds baseGrid pieceGrid @?= False
     ]
+
+  , testGroup "Grid rotation functions (square grids only)"
+    [ testGroup "rotateClockwise"
+      [ testCase "Empty grid rotation" $ do
+          let grid = makeSparse mempty ([] :: [(Coordinate, String)])
+          let rotated = rotateClockwise grid
+          toList rotated @?= []
+
+      , testCase "Single cell grid rotates around itself" $ do
+          let grid = makeSparse mempty [((0, 0), "A")]
+          let rotated = rotateClockwise grid
+          toList rotated @?= [((0, 0), "A")]
+
+      , testCase "2x2 square clockwise rotation" $ do
+          -- Pattern: A B    ->   C A
+          --          C D         D B
+          let grid = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((0, 1), "C"), ((1, 1), "D")]
+          let rotated = rotateClockwise grid
+          toList rotated @?= [((0, 1), "A"), ((0, 0), "B"), ((1, 1), "C"), ((1, 0), "D")]
+
+      , testCase "3x3 square clockwise rotation (corners)" $ do
+          -- Only test corners to keep it simple
+          let grid = makeSparse mempty [((0, 0), "A"), ((2, 0), "C"), ((0, 2), "G"), ((2, 2), "I")]
+          let rotated = rotateClockwise grid
+          toList rotated @?= [((0, 2), "A"), ((0, 0), "C"), ((2, 2), "G"), ((2, 0), "I")]
+
+      , testCase "3x3 square with center element" $ do
+          let grid = makeSparse mempty [((0, 0), "A"), ((1, 1), "E"), ((2, 2), "I")]
+          let rotated = rotateClockwise grid
+          toList rotated @?= [((0, 2), "A"), ((1, 1), "E"), ((2, 0), "I")]
+      ]
+
+    , testGroup "rotateCounterClockwise"
+      [ testCase "Empty grid rotation" $ do
+          let grid = makeSparse mempty ([] :: [(Coordinate, String)])
+          let rotated = rotateCounterClockwise grid
+          toList rotated @?= []
+
+      , testCase "Single cell grid rotates around itself" $ do
+          let grid = makeSparse mempty [((0, 0), "A")]
+          let rotated = rotateCounterClockwise grid
+          toList rotated @?= [((0, 0), "A")]
+
+      , testCase "2x2 square counter-clockwise rotation" $ do
+          -- Pattern: A B    ->   B D
+          --          C D         A C
+          let grid = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((0, 1), "C"), ((1, 1), "D")]
+          let rotated = rotateCounterClockwise grid
+          toList rotated @?= [((1, 0), "A"), ((1, 1), "B"), ((0, 0), "C"), ((0, 1), "D")]
+      ]
+
+    , testGroup "Rotation properties"
+      [ testCase "Four clockwise rotations return to original (2x2)" $ do
+          let original = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((0, 1), "C"), ((1, 1), "D")]
+          let rotated = rotateClockwise . rotateClockwise . rotateClockwise . rotateClockwise $ original
+          toList rotated @?= toList original
+
+      , testCase "Four counter-clockwise rotations return to original (2x2)" $ do
+          let original = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((0, 1), "C"), ((1, 1), "D")]
+          let rotated = rotateCounterClockwise . rotateCounterClockwise . rotateCounterClockwise . rotateCounterClockwise $ original
+          toList rotated @?= toList original
+
+      , testCase "Clockwise then counter-clockwise returns to original (3x3)" $ do
+          let original = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((2, 0), "C"),
+                                           ((0, 1), "D"), ((1, 1), "E"), ((2, 1), "F"),
+                                           ((0, 2), "G"), ((1, 2), "H"), ((2, 2), "I")]
+          let rotated = rotateCounterClockwise . rotateClockwise $ original
+          toList rotated @?= toList original
+
+      , testCase "Counter-clockwise then clockwise returns to original (3x3)" $ do
+          let original = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((2, 0), "C"),
+                                           ((0, 1), "D"), ((1, 1), "E"), ((2, 1), "F"),
+                                           ((0, 2), "G"), ((1, 2), "H"), ((2, 2), "I")]
+          let rotated = rotateClockwise . rotateCounterClockwise $ original
+          toList rotated @?= toList original
+
+      , testCase "Three clockwise equals one counter-clockwise (2x2)" $ do
+          let original = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((0, 1), "C"), ((1, 1), "D")]
+          let clockwise3 = rotateClockwise . rotateClockwise . rotateClockwise $ original
+          let counterClockwise1 = rotateCounterClockwise original
+          toList clockwise3 @?= toList counterClockwise1
+
+      , testCase "Three counter-clockwise equals one clockwise (2x2)" $ do
+          let original = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((0, 1), "C"), ((1, 1), "D")]
+          let counterClockwise3 = rotateCounterClockwise . rotateCounterClockwise . rotateCounterClockwise $ original
+          let clockwise1 = rotateClockwise original
+          toList counterClockwise3 @?= toList clockwise1
+      ]
+    ]
+
   ]

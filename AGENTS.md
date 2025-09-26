@@ -3,6 +3,7 @@
 ## Haskell Specific Things
 
 - **DON'T**: Try to import `foldl'`. That isn't required anymore.
+- **DON'T**: Try to use `stack gchi`. If you want to experiment or do "simple tests", write a tasty unit test instead.
 
 ## Using Project Scripts
 
