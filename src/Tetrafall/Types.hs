@@ -120,6 +120,6 @@ getTetrominoGrid piece =
 tetrominoI :: Tetromino
 tetrominoI = Tetromino
   { _tetrominoType = I
-  , _position = (5, 3)
+  , _position = (4, 1)
   , _orientation = North
   }
