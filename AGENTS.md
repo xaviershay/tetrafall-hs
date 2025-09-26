@@ -1,5 +1,19 @@
 # Agent Instructions
 
+## Using Project Scripts
+
+**ALWAYS use `bin/test` instead of `stack` commands directly.**
+
+- **DO**: Use `bin/test` for building, running, and testing the program
+- **DON'T**: Use `stack test`, `stack build`, or other stack commands directly
+- **DON'T**: Try to run subsets of tests. Always run the full suite, using `bin/test`.
+- **WHY**: The `bin/test` script provides consistent error handling and may include additional project-specific configuration
+
+If you need to do something that cannot be accomplished with the available `bin/` scripts, pause and ask for assistance rather than falling back to direct `stack` commands.
+
+Available scripts:
+- `bin/test` - Runs the test suite (equivalent to `stack test` with additional flags)
+
 ## Handling GHC Compiler Warnings
 
 When fixing GHC compiler warnings, follow these principles:
