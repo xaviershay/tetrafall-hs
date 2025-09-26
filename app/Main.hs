@@ -81,4 +81,5 @@ main = do
 defaultGame = Game
   { _grid = setAt (5, 5) Garbage $ setAt (5, 10) (TetrominoCell T) $ setAt (6, 10) (TetrominoCell T) $ makeDense (10, 22) Empty
   , _score = 0
+  , _currentPiece = Just tetrominoI
   }

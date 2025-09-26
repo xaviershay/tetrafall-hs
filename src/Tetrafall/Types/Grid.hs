@@ -44,7 +44,7 @@ makeSparse xs = Grid
     (minX, maxX, minY, maxY) = foldl' updateBounds (maxBound, minBound, maxBound, minBound) (map fst xs)
     updateBounds (minX', maxX', minY', maxY') (x, y) = (min x minX', max x maxX', min y minY', max y maxY')
 
--- Limitations:
+-- Overlay foreground grid on top of background grid
 overlay :: Grid a -> Grid a -> Grid a
 overlay bg fg = case (_cells bg, _cells fg) of
   (Dense bgCells, Sparse fgCells) -> 
@@ -58,10 +58,33 @@ overlay bg fg = case (_cells bg, _cells fg) of
            then cells V.// [(y, (cells V.! y) V.// [(x, value)])]
            else cells  -- Ignore out-of-bounds coordinates
   
-  -- Other combinations - leave undefined for now
-  (Dense _, Dense _) -> undefined
-  (Sparse _, Dense _) -> undefined  
-  (Sparse _, Sparse _) -> undefined
+  (Dense bgCells, Dense fgCells) ->
+    let (bgW, bgH) = _dimensions bg
+        (fgW, fgH) = _dimensions fg
+        minW = min bgW fgW
+        minH = min bgH fgH
+        updatedCells = V.imap (\y row -> 
+          if y < minH 
+          then V.imap (\x cell -> 
+            if x < minW 
+            then (fgCells V.! y) V.! x 
+            else cell) row
+          else row) bgCells
+    in Grid (_dimensions bg) (Dense updatedCells)
+  
+  (Sparse _, Dense _) ->
+    -- For sparse background and dense foreground, just return the foreground
+    fg
+  
+  (Sparse bgCells, Sparse fgCells) ->
+    let combinedCells = fgCells ++ filter (\(coord, _) -> coord `notElem` map fst fgCells) bgCells
+        newDims = if null combinedCells 
+                 then (0, 0) 
+                 else let coords = map fst combinedCells
+                          xs = map fst coords
+                          ys = map snd coords
+                      in (maximum xs - minimum xs + 1, maximum ys - minimum ys + 1)
+    in Grid newDims (Sparse combinedCells)
 
 double :: Grid a ->  Grid a
 double grid = case (_cells grid) of
@@ -87,3 +110,12 @@ setAt (x, y) cell grid = case (_cells grid) of
   Sparse cells -> 
     let updatedCells = ((x, y), cell) : filter ((/= (x, y)) . fst) cells
     in Grid (_dimensions grid) (Sparse updatedCells)
+
+emptyGrid :: Grid a
+emptyGrid = Grid (0, 0) (Dense V.empty)
+
+instance Semigroup (Grid a) where
+  (<>) = overlay
+
+instance Monoid (Grid a) where
+  mempty = emptyGrid
