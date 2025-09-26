@@ -79,6 +79,12 @@ step game =
 appEvent :: BrickEvent () Tick -> EventM () Game ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
 appEvent (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt
+appEvent (VtyEvent (V.EvKey V.KLeft [])) = do
+    modify (apply ActionLeft)
+    return ()
+appEvent (VtyEvent (V.EvKey V.KRight [])) = do
+    modify (apply ActionRight)
+    return ()
 appEvent (AppEvent Tick) = do
     modify step
     return ()
