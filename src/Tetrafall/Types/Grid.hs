@@ -1,6 +1,6 @@
-module Tetrafall.Types.Grid (makeDense, makeSparse, dimensions, overlay, toList, Grid) where
+module Tetrafall.Types.Grid (makeDense, makeSparse, dimensions, overlay, toList, toVector, setAt, double, Grid) where
 
-import Tetrafall.Types (Coordinate)
+import Tetrafall.Types.Coordinate
 
 import qualified Data.Vector as V
 import Data.Vector (Vector)
@@ -19,6 +19,12 @@ toList :: Grid a -> [(Coordinate, a)]
 toList g = case (_cells g) of
   Sparse xs -> xs
   Dense xs -> concatMap (\(y, row) -> map (\(x, val) -> ((x, y), val)) (V.toList (V.indexed row))) (V.toList (V.indexed xs))
+
+toVector :: Grid a -> Vector (Vector a)
+toVector g = case (_cells g) of
+  Sparse _ -> undefined
+  Dense xs -> xs
+  
 
 dimensions :: Grid a -> Coordinate
 dimensions = _dimensions
@@ -56,3 +62,28 @@ overlay bg fg = case (_cells bg, _cells fg) of
   (Dense _, Dense _) -> undefined
   (Sparse _, Dense _) -> undefined  
   (Sparse _, Sparse _) -> undefined
+
+double :: Grid a ->  Grid a
+double grid = case (_cells grid) of
+  Sparse _ -> undefined
+  Dense originalContents -> Grid
+    { _dimensions = (w * 2, h * 2)
+    , _cells = Dense $ V.fromList $ concatMap doubleRow (V.toList originalContents)
+    }
+    where
+      (w, h) = _dimensions grid
+      doubleRow row = [doubledRow, doubledRow]
+        where doubledRow = V.fromList $ concatMap (\cell -> [cell, cell]) (V.toList row)
+
+
+setAt :: Coordinate -> a -> Grid a -> Grid a
+setAt (x, y) cell grid = case (_cells grid) of
+  Dense cells -> 
+    let (maxX, maxY) = _dimensions grid
+    in if x >= 0 && x < maxX && y >= 0 && y < maxY
+       then Grid (_dimensions grid) (Dense (cells V.// [(y, (cells V.! y) V.// [(x, cell)])]))
+       else grid  -- Ignore out-of-bounds coordinates
+  
+  Sparse cells -> 
+    let updatedCells = ((x, y), cell) : filter ((/= (x, y)) . fst) cells
+    in Grid (_dimensions grid) (Sparse updatedCells)

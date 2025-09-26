@@ -3,6 +3,7 @@
 module Main (main) where
 
 import Tetrafall.Types
+import Tetrafall.Types.Grid (toVector, double, makeDense)
 
 import qualified Data.Vector as V
 
@@ -22,14 +23,6 @@ import Graphics.Vty.CrossPlatform (mkVty)
 import Graphics.Vty.Config (VtyUserConfig(..), defaultConfig)
 import Graphics.Vty.Attributes.Color (ColorMode(..))
 
-data Tick = Tick
-
-data Game = Game
-  { _grid :: Grid
-  , _score :: Int
-  }
-makeLenses ''Game
-
 playfield :: Game -> Widget ()
 playfield game =
     let
@@ -40,21 +33,10 @@ playfield game =
     hCenter $
     vCenter $
     (border $
-    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (view contents (doubleGrid g)))) <+> ( border $ hLimit 6 $ padLeft Max $ str (show s))
+    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> ( border $ hLimit 6 $ padLeft Max $ str (show s))
 
 formatCell Empty = str " "
 formatCell _ = str "█"
-
-doubleGrid :: Grid ->  Grid
-doubleGrid grid = Grid
-  { _dimensions = (w * 2, h * 2)
-  , _contents = V.fromList $ concatMap doubleRow (V.toList originalContents)
-  }
-  where
-    (w, h) = view dimensions grid
-    originalContents = view contents grid
-    doubleRow row = [doubledRow, doubledRow]
-      where doubledRow = V.fromList $ concatMap (\cell -> [cell, cell]) (V.toList row)
 
 step :: Game -> Game
 step = over score ((+) 1)
@@ -97,6 +79,6 @@ main = do
     void $ customMain initialVty buildVty (Just chan) app defaultGame
 
 defaultGame = Game
-  { _grid = setAt (5, 5) Garbage $ setAt (5, 10) (TetrominoCell T) $ setAt (6, 10) (TetrominoCell T) $ mkGrid 10 22
+  { _grid = setAt (5, 5) Garbage $ setAt (5, 10) (TetrominoCell T) $ setAt (6, 10) (TetrominoCell T) $ makeDense (10, 22) Empty
   , _score = 0
   }

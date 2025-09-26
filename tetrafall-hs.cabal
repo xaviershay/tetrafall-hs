@@ -27,6 +27,7 @@ library
   exposed-modules:
       Lib
       Tetrafall.Types
+      Tetrafall.Types.Coordinate
       Tetrafall.Types.Grid
   hs-source-dirs:
       src
