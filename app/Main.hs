@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, makeDense, toList, makeSparse, overlap, isWithinBounds)
+import Tetrafall.Types.Grid (toVector, makeDense, toList, makeSparse, overlap, isWithinBounds, emptyGrid, overlay)
 
 import qualified Data.Vector as V
 import qualified Data.HashMap.Strict as HM
@@ -28,16 +28,16 @@ translateTetromino tetromino shape =
     let (px, py) = tetromino ^. position
         cells = toList shape
         translatedCells = map (\((x, y), cell) -> ((x + px, y + py), cell)) cells
-    in makeSparse translatedCells
+    in makeSparse Empty translatedCells
 
 getFinalGrid :: Game -> Grid Cell
 getFinalGrid game =
     let baseGrid = game ^. grid
-        pieceGrid = fromMaybe mempty $ do
+        pieceGrid = fromMaybe (emptyGrid Empty) $ do
           piece <- game ^. currentPiece
           shape <- HM.lookup (piece ^. tetrominoType) defaultTetrominoMap
           return (translateTetromino piece shape)
-    in baseGrid <> pieceGrid
+    in baseGrid `overlay` pieceGrid
 
 playfield :: Game -> Widget ()
 playfield game =
@@ -62,16 +62,16 @@ step game =
         Nothing -> newGame
         Just piece -> 
             let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
-                movedPieceGrid = fromMaybe mempty $ do
+                movedPieceGrid = fromMaybe (emptyGrid Empty) $ do
                     shape <- HM.lookup (movedPiece ^. tetrominoType) defaultTetrominoMap
                     return (translateTetromino movedPiece shape)
                 baseGrid = newGame ^. grid
             in if overlap baseGrid movedPieceGrid || not (isWithinBounds baseGrid movedPieceGrid)
                then -- Place piece and reset
-                   let currentPieceGrid = fromMaybe mempty $ do
+                   let currentPieceGrid = fromMaybe (emptyGrid Empty) $ do
                            shape <- HM.lookup (piece ^. tetrominoType) defaultTetrominoMap
                            return (translateTetromino piece shape)
-                       newGrid = baseGrid <> currentPieceGrid
+                       newGrid = baseGrid `overlay` currentPieceGrid
                    in newGame & grid .~ newGrid & currentPiece .~ Just tetrominoI
                else -- Move piece
                    newGame & currentPiece .~ Just movedPiece

@@ -41,13 +41,7 @@ instance Hashable TetrominoType where
 data Cell = Empty | Garbage | TetrominoCell TetrominoType
   deriving (Eq)
 
-instance Semigroup Cell where
-  Empty <> other = other
-  other <> Empty = other
-  _ <> other = other
 
-instance Monoid Cell where
-  mempty = Empty
 
 data Orientation = North | East | South | West
   deriving (Show, Enum)
@@ -79,11 +73,11 @@ type TetrominoMap = HashMap TetrominoType (Grid Cell)
 
 defaultTetrominoMap :: TetrominoMap
 defaultTetrominoMap = fromList
-  [ (I, makeSparse [((- 1, 0), TetrominoCell I), ((0, 0), TetrominoCell I), ((1, 0), TetrominoCell I), ((2, 0), TetrominoCell I)])
-  , (T, makeSparse [((-1, 0), TetrominoCell T), ((0, 0), TetrominoCell T), ((1, 0), TetrominoCell T), ((0, 1), TetrominoCell T)])
-  , (S, makeSparse [((0, 0), TetrominoCell S), ((1, 0), TetrominoCell S), ((0, -1), TetrominoCell S), ((1, -1), TetrominoCell S)])
-  , (Z, makeSparse [((-1, -1), TetrominoCell Z), ((0, -1), TetrominoCell Z), ((0, 0), TetrominoCell Z), ((1, 0), TetrominoCell Z)])
-  , (J, makeSparse [((-1, 0), TetrominoCell J), ((0, 0), TetrominoCell J), ((1, 0), TetrominoCell J), ((-1, -1), TetrominoCell J)])
-  , (L, makeSparse [((-1, 0), TetrominoCell L), ((0, 0), TetrominoCell L), ((1, 0), TetrominoCell L), ((1, -1), TetrominoCell L)])
-  , (O, makeSparse [((0, 0), TetrominoCell O), ((1, 0), TetrominoCell O), ((0, -1), TetrominoCell O), ((1, -1), TetrominoCell O)])
+  [ (I, makeSparse Empty [((- 1, 0), TetrominoCell I), ((0, 0), TetrominoCell I), ((1, 0), TetrominoCell I), ((2, 0), TetrominoCell I)])
+  , (T, makeSparse Empty [((-1, 0), TetrominoCell T), ((0, 0), TetrominoCell T), ((1, 0), TetrominoCell T), ((0, 1), TetrominoCell T)])
+  , (S, makeSparse Empty [((0, 0), TetrominoCell S), ((1, 0), TetrominoCell S), ((0, -1), TetrominoCell S), ((1, -1), TetrominoCell S)])
+  , (Z, makeSparse Empty [((-1, -1), TetrominoCell Z), ((0, -1), TetrominoCell Z), ((0, 0), TetrominoCell Z), ((1, 0), TetrominoCell Z)])
+  , (J, makeSparse Empty [((-1, 0), TetrominoCell J), ((0, 0), TetrominoCell J), ((1, 0), TetrominoCell J), ((-1, -1), TetrominoCell J)])
+  , (L, makeSparse Empty [((-1, 0), TetrominoCell L), ((0, 0), TetrominoCell L), ((1, 0), TetrominoCell L), ((1, -1), TetrominoCell L)])
+  , (O, makeSparse Empty [((0, 0), TetrominoCell O), ((1, 0), TetrominoCell O), ((0, -1), TetrominoCell O), ((1, -1), TetrominoCell O)])
   ]

@@ -1,4 +1,4 @@
-module Tetrafall.Types.Grid (makeDense, makeSparse, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid) where
+module Tetrafall.Types.Grid (makeDense, makeSparse, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid) where
 
 import Tetrafall.Types.Coordinate
 
@@ -12,6 +12,7 @@ data CellData a =
 data Grid a = Grid
   { _extent :: (Coordinate, Coordinate)  -- (topLeft, bottomRight)
   , _cells :: (CellData a)
+  , _emptyValue :: a
   }
 
 toList :: Grid a -> [(Coordinate, a)]
@@ -34,15 +35,17 @@ extent :: Grid a -> (Coordinate, Coordinate)
 extent = _extent
 
 makeDense :: Coordinate -> a -> Grid a
-makeDense (w, h) zero = Grid
+makeDense (w, h) empty = Grid
   { _extent = ((0, 0), (w - 1, h - 1))
-  , _cells = Dense $ V.fromList (replicate h (V.fromList (replicate w zero)))
+  , _cells = Dense $ V.fromList (replicate h (V.fromList (replicate w empty)))
+  , _emptyValue = empty
   }
 
-makeSparse :: [(Coordinate, a)] -> Grid a
-makeSparse xs = Grid
+makeSparse :: a -> [(Coordinate, a)] -> Grid a
+makeSparse empty xs = Grid
     { _extent = if null xs then ((0, 0), (-1, -1)) else ((minX, minY), (maxX, maxY))
     , _cells = Sparse xs
+    , _emptyValue = empty
     }
   where
     (minX, maxX, minY, maxY) = foldl' updateBounds (maxBound, minBound, maxBound, minBound) (map fst xs)
@@ -53,7 +56,7 @@ overlay :: Grid a -> Grid a -> Grid a
 overlay bg fg = case (_cells bg, _cells fg) of
   (Dense bgCells, Sparse fgCells) -> 
     let updatedCells = foldl' updateCell bgCells fgCells
-    in Grid (_extent bg) (Dense updatedCells)
+    in bg { _cells = (Dense updatedCells) }
     where
       updateCell cells (coord, value) = 
         let (x, y) = coord
@@ -78,7 +81,7 @@ overlay bg fg = case (_cells bg, _cells fg) of
             then (fgCells V.! y) V.! x 
             else cell) row
           else row) bgCells
-    in Grid (_extent bg) (Dense updatedCells)
+    in bg { _cells = Dense updatedCells }
   
   (Sparse _, Dense _) ->
     -- For sparse background and dense foreground, just return the foreground
@@ -92,7 +95,7 @@ overlay bg fg = case (_cells bg, _cells fg) of
                             xs = map fst coords
                             ys = map snd coords
                         in ((minimum xs, minimum ys), (maximum xs, maximum ys))
-    in Grid newExtent (Sparse combinedCells)
+    in Grid newExtent (Sparse combinedCells) (_emptyValue bg)
 
 double :: Grid a ->  Grid a
 double grid = case (_cells grid) of
@@ -100,6 +103,7 @@ double grid = case (_cells grid) of
   Dense originalContents -> Grid
     { _extent = ((minX * 2, minY * 2), (maxX * 2 + 1, maxY * 2 + 1))
     , _cells = Dense $ V.fromList $ concatMap doubleRow (V.toList originalContents)
+    , _emptyValue = _emptyValue grid
     }
     where
       ((minX, minY), (maxX, maxY)) = _extent grid
@@ -112,7 +116,7 @@ setAt (x, y) cell grid = case (_cells grid) of
   Dense cells -> 
     let ((minX, minY), (maxX, maxY)) = _extent grid
     in if x >= minX && x <= maxX && y >= minY && y <= maxY
-       then Grid (_extent grid) (Dense (cells V.// [(y - minY, (cells V.! (y - minY)) V.// [(x - minX, cell)])]))
+       then grid { _cells = (Dense (cells V.// [(y - minY, (cells V.! (y - minY)) V.// [(x - minX, cell)])])) }
        else grid  -- Ignore out-of-bounds coordinates
   
   Sparse cells -> 
@@ -122,15 +126,15 @@ setAt (x, y) cell grid = case (_cells grid) of
                    then ((x, y), (x, y))
                    else let ((oldMinX, oldMinY), (oldMaxX, oldMaxY)) = oldExtent
                         in ((min x oldMinX, min y oldMinY), (max x oldMaxX, max y oldMaxY))
-    in Grid newExtent (Sparse updatedCells)
+    in Grid newExtent (Sparse updatedCells) (_emptyValue grid)
 
-emptyGrid :: Grid a
-emptyGrid = Grid ((0, 0), (-1, -1)) (Dense V.empty)
+emptyGrid :: a -> Grid a
+emptyGrid empty = Grid ((0, 0), (-1, -1)) (Dense V.empty) empty
 
-toSparse :: (Eq a, Monoid a) => Grid a -> [(Coordinate, a)]
-toSparse grid = filter ((/= mempty) . snd) (toList grid)
+toSparse :: Eq a => Grid a -> [(Coordinate, a)]
+toSparse grid = filter ((/= _emptyValue grid) . snd) (toList grid)
 
-overlap :: (Eq a, Monoid a) => Grid a -> Grid a -> Bool
+overlap :: Eq a => Grid a -> Grid a -> Bool
 overlap grid1 grid2 = 
   let sparse1 = toSparse grid1
       sparse2 = toSparse grid2
@@ -143,9 +147,3 @@ isWithinBounds baseGrid pieceGrid =
     let ((baseMinX, baseMinY), (baseMaxX, baseMaxY)) = _extent baseGrid
         pieceCoords = map fst (toList pieceGrid)
     in all (\(x, y) -> x >= baseMinX && x <= baseMaxX && y >= baseMinY && y <= baseMaxY) pieceCoords
-
-instance Semigroup (Grid a) where
-  (<>) = overlay
-
-instance Monoid (Grid a) where
-  mempty = emptyGrid

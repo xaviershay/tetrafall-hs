@@ -1,5 +1,9 @@
 # Agent Instructions
 
+## Haskell Specific Things
+
+- **DON'T**: Try to import `foldl'`. That isn't required anymore.
+
 ## Using Project Scripts
 
 **ALWAYS use `bin/test` instead of `stack` commands directly.**
