@@ -59,7 +59,7 @@ formatCell Empty = str " "
 formatCell _ = str "█"
 
 step :: Game -> Game
-step = over score ((+) 1)
+step = over score ((+) 1) . over currentPiece (fmap (over position (\(x, y) -> (x, y + 1))))
 
 appEvent :: BrickEvent () Tick -> EventM () Game ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
