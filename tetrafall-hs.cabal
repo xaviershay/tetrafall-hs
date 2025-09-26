@@ -35,8 +35,10 @@ library
   build-depends:
       base >=4.7 && <5
     , brick >=2.4
+    , hashable
     , microlens-platform
     , mtl
+    , unordered-containers
     , vector
     , vty >=6.2
     , vty-crossplatform >=0.4
@@ -52,9 +54,11 @@ executable tetrafall
   build-depends:
       base >=4.7 && <5
     , brick >=2.4
+    , hashable
     , microlens-platform
     , mtl
     , tetrafall-hs
+    , unordered-containers
     , vector
     , vty >=6.2
     , vty-crossplatform >=0.4
@@ -70,9 +74,11 @@ executable tetrafall-color-test
   build-depends:
       base >=4.7 && <5
     , brick >=2.4
+    , hashable
     , microlens-platform
     , mtl
     , tetrafall-hs
+    , unordered-containers
     , vector
     , vty >=6.2
     , vty-crossplatform >=0.4
@@ -89,11 +95,13 @@ test-suite tetrafall-hs-test
   build-depends:
       base >=4.7 && <5
     , brick >=2.4
+    , hashable
     , microlens-platform
     , mtl
     , tasty
     , tasty-hunit
     , tetrafall-hs
+    , unordered-containers
     , vector
     , vty >=6.2
     , vty-crossplatform >=0.4

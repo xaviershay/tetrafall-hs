@@ -3,9 +3,10 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, double, makeDense)
+import Tetrafall.Types.Grid (toVector, double, makeDense, overlay, setAt, toList, makeSparse)
 
 import qualified Data.Vector as V
+import qualified Data.HashMap.Strict as HM
 
 import Lens.Micro.Platform
 
@@ -23,17 +24,39 @@ import Graphics.Vty.CrossPlatform (mkVty)
 import Graphics.Vty.Config (VtyUserConfig(..), defaultConfig)
 import Graphics.Vty.Attributes.Color (ColorMode(..))
 
+-- Translate a tetromino shape to its world position
+translateTetromino :: Tetromino -> Grid Cell -> Grid Cell
+translateTetromino tetromino shape =
+    let (px, py) = tetromino ^. position
+        cells = toList shape
+        translatedCells = map (\((x, y), cell) -> ((x + px, y + py), cell)) cells
+    in makeSparse translatedCells
+
+-- Get the final grid with current piece overlaid
+getFinalGrid :: Game -> Grid Cell
+getFinalGrid game =
+    let baseGrid = game ^. grid
+        maybePiece = game ^. currentPiece
+    in case maybePiece of
+        Nothing -> baseGrid
+        Just piece -> 
+            let tetrominoType' = piece ^. tetrominoType
+                maybeShape = HM.lookup tetrominoType' defaultTetrominoMap
+            in case maybeShape of
+                Nothing -> baseGrid
+                Just shape -> overlay baseGrid (translateTetromino piece shape)
+
 playfield :: Game -> Widget ()
 playfield game =
     let
-      g = view grid game
-      s = view score game
+      g = getFinalGrid game
+      s = game ^. score
     in
 
     hCenter $
     vCenter $
     (border $
-    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> ( border $ hLimit 6 $ padLeft Max $ str (show s))
+    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (g)))) <+> ( border $ hLimit 6 $ padLeft Max $ str (show s))
 
 formatCell Empty = str " "
 formatCell _ = str "█"

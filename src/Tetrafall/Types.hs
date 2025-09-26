@@ -10,14 +10,22 @@ module Tetrafall.Types
   , Tetromino(..)
   , Tick(..)
   , tetrominoI
+  , defaultTetrominoMap
+  , TetrominoMap
   , dimensions
   , setAt
   , grid
   , score
+  , currentPiece
+  , tetrominoType
+  , position
+  , orientation
   ) where
 
 import qualified Data.Vector as V
 import Data.Vector (Vector)
+import Data.HashMap.Strict (HashMap, fromList)
+import Data.Hashable (Hashable(..))
 import Lens.Micro.Platform
 
 import Tetrafall.Types.Coordinate
@@ -26,7 +34,10 @@ import Tetrafall.Types.Grid
 data Tick = Tick
 
 data TetrominoType = S | Z | J | L | O | I | T
-  deriving (Show, Enum)
+  deriving (Show, Enum, Eq, Ord)
+
+instance Hashable TetrominoType where
+  hashWithSalt s = hashWithSalt s . fromEnum
 
 data Cell = Empty | Garbage | TetrominoCell TetrominoType
 data Orientation = North | East | South | West
@@ -54,8 +65,15 @@ tetrominoI = Tetromino
   , _orientation = North
   }
 
---type TetrominoMap = HashMap TetrominoType (Grid Cell)
---
---defaultTertominoMap = fromList
---  [(I, makeSparse (TetrominoCell I) [(-1, 0), (0, 0), (1, 0), (2, 0)])
---  ]
+type TetrominoMap = HashMap TetrominoType (Grid Cell)
+
+defaultTetrominoMap :: TetrominoMap
+defaultTetrominoMap = fromList
+  [ (I, makeSparse [((- 1, 0), TetrominoCell I), ((0, 0), TetrominoCell I), ((1, 0), TetrominoCell I), ((2, 0), TetrominoCell I)])
+  , (T, makeSparse [((-1, 0), TetrominoCell T), ((0, 0), TetrominoCell T), ((1, 0), TetrominoCell T), ((0, 1), TetrominoCell T)])
+  , (S, makeSparse [((0, 0), TetrominoCell S), ((1, 0), TetrominoCell S), ((0, -1), TetrominoCell S), ((1, -1), TetrominoCell S)])
+  , (Z, makeSparse [((-1, -1), TetrominoCell Z), ((0, -1), TetrominoCell Z), ((0, 0), TetrominoCell Z), ((1, 0), TetrominoCell Z)])
+  , (J, makeSparse [((-1, 0), TetrominoCell J), ((0, 0), TetrominoCell J), ((1, 0), TetrominoCell J), ((-1, -1), TetrominoCell J)])
+  , (L, makeSparse [((-1, 0), TetrominoCell L), ((0, 0), TetrominoCell L), ((1, 0), TetrominoCell L), ((1, -1), TetrominoCell L)])
+  , (O, makeSparse [((0, 0), TetrominoCell O), ((1, 0), TetrominoCell O), ((0, -1), TetrominoCell O), ((1, -1), TetrominoCell O)])
+  ]
