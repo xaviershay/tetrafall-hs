@@ -14,6 +14,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Just tetrominoI 
               , _score = 0
+              , _slideState = CanFall
               }
         let originalPos = case _currentPiece testGame of 
               Just p -> _position p
@@ -30,6 +31,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Just tetrominoI 
               , _score = 0
+              , _slideState = CanFall
               }
         let originalPos = case _currentPiece testGame of 
               Just p -> _position p
@@ -46,6 +48,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Nothing
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfterLeft = apply ActionLeft testGame
         _currentPiece gameAfterLeft @?= Nothing
@@ -55,6 +58,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Nothing
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfterRight = apply ActionRight testGame
         _currentPiece gameAfterRight @?= Nothing
@@ -69,6 +73,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Just piece
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfterLeft = apply ActionLeft testGame
         let finalPos = case _currentPiece gameAfterLeft of 
@@ -86,6 +91,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Just piece
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfterRight = apply ActionRight testGame
         let finalPos = case _currentPiece gameAfterRight of 
@@ -104,6 +110,7 @@ typesTests = testGroup "Types Tests"
               { _grid = gridWithBlockage
               , _currentPiece = Just piece
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfterLeft = apply ActionLeft testGame
         let finalPos = case _currentPiece gameAfterLeft of 
@@ -121,6 +128,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Just piece
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfterRotate = apply ActionRotateCW testGame
         let newOrientation = case _currentPiece gameAfterRotate of 
@@ -138,6 +146,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Just piece
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfterRotate = apply ActionRotateCCW testGame
         let newOrientation = case _currentPiece gameAfterRotate of 
@@ -150,6 +159,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Nothing
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfterRotate = apply ActionRotateCW testGame
         _currentPiece gameAfterRotate @?= Nothing
@@ -159,6 +169,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Nothing
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfterRotate = apply ActionRotateCCW testGame
         _currentPiece gameAfterRotate @?= Nothing
@@ -173,6 +184,7 @@ typesTests = testGroup "Types Tests"
               { _grid = makeDense (10, 20) Empty
               , _currentPiece = Just piece
               , _score = 0
+              , _slideState = CanFall
               }
         let gameAfter1CW = apply ActionRotateCW testGame
         let gameAfter2CW = apply ActionRotateCW gameAfter1CW

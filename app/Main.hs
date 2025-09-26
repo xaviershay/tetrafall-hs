@@ -56,13 +56,26 @@ step game =
             let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
                 movedPieceGrid = getTetrominoGrid movedPiece
                 baseGrid = newGame ^. grid
-            in if overlap baseGrid movedPieceGrid || not (isWithinBounds baseGrid movedPieceGrid)
-               then -- Place piece and reset
-                   let currentPieceGrid = getTetrominoGrid piece
-                       newGrid = baseGrid `overlay` currentPieceGrid
-                   in newGame & grid .~ newGrid & currentPiece .~ Just tetrominoI
-               else -- Move piece
-                   newGame & currentPiece .~ Just movedPiece
+                canFall = not (overlap baseGrid movedPieceGrid) && isWithinBounds baseGrid movedPieceGrid
+            in if canFall
+               then -- Piece can fall normally, reset slide state
+                   newGame & currentPiece .~ Just movedPiece & slideState .~ CanFall
+               else -- Piece cannot fall, check slide state
+                   case newGame ^. slideState of
+                       CanFall -> 
+                           -- First time piece can't fall, enter sliding state
+                           newGame & slideState .~ Sliding (piece ^. position)
+                       Sliding originalPos -> 
+                           -- Check if piece has moved since sliding started
+                           if piece ^. position == originalPos
+                           then -- Piece hasn't moved, lock it down
+                               let currentPieceGrid = getTetrominoGrid piece
+                                   newGrid = baseGrid `overlay` currentPieceGrid
+                               in newGame & grid .~ newGrid 
+                                         & currentPiece .~ Just tetrominoI 
+                                         & slideState .~ CanFall
+                           else -- Piece has moved, continue sliding with new position
+                               newGame & slideState .~ Sliding (piece ^. position)
 
 appEvent :: BrickEvent () Tick -> EventM () Game ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
@@ -108,4 +121,5 @@ defaultGame = Game
   { _grid =  makeDense (10, 22) Empty
   , _score = 0
   , _currentPiece = Just tetrominoI
+  , _slideState = CanFall
   }

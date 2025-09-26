@@ -10,6 +10,7 @@ module Tetrafall.Types
   , Tetromino(..)
   , Tick(..)
   , Action(..)
+  , SlideState(..)
   , apply
   , tetrominoI
   , defaultTetrominoMap
@@ -19,6 +20,7 @@ module Tetrafall.Types
   , grid
   , score
   , currentPiece
+  , slideState
   , tetrominoType
   , position
   , orientation
@@ -80,7 +82,13 @@ data Game = Game
   { _grid :: Grid Cell
   , _currentPiece :: Maybe Tetromino
   , _score :: Int
+  , _slideState :: SlideState
   }
+
+data SlideState = 
+    CanFall  -- Piece can still fall normally
+  | Sliding Coordinate  -- Piece cannot fall, tracking position for slide detection
+  deriving (Eq, Show)
 
 makeLenses ''Game
 
@@ -97,6 +105,10 @@ defaultTetrominoMap = fromList
   , (O, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((0, 0), TetrominoCell O), ((1, 0), TetrominoCell O), ((0, -1), TetrominoCell O), ((1, -1), TetrominoCell O)])
   ]
 
+-- Helper function to reset slide state when piece moves
+resetSlideState :: Game -> Game
+resetSlideState = slideState .~ CanFall
+
 apply :: Action -> Game -> Game
 apply ActionLeft game = 
   case game ^. currentPiece of
@@ -105,7 +117,7 @@ apply ActionLeft game =
       let newPosition = (fst (piece ^. position) - 1, snd (piece ^. position))
           newPiece = piece & position .~ newPosition
       in if isValidMove game newPiece
-         then game & currentPiece .~ Just newPiece
+         then resetSlideState $ game & currentPiece .~ Just newPiece
          else game
 
 apply ActionRight game = 
@@ -115,7 +127,7 @@ apply ActionRight game =
       let newPosition = (fst (piece ^. position) + 1, snd (piece ^. position))
           newPiece = piece & position .~ newPosition
       in if isValidMove game newPiece
-         then game & currentPiece .~ Just newPiece
+         then resetSlideState $ game & currentPiece .~ Just newPiece
          else game
 
 apply ActionRotateCW game =
@@ -125,7 +137,7 @@ apply ActionRotateCW game =
       let newOrientation = rotateCW (piece ^. orientation)
           newPiece = piece & orientation .~ newOrientation
       in if isValidMove game newPiece
-         then game & currentPiece .~ Just newPiece
+         then resetSlideState $ game & currentPiece .~ Just newPiece
          else game
 
 apply ActionRotateCCW game =
@@ -135,7 +147,7 @@ apply ActionRotateCCW game =
       let newOrientation = rotateCCW (piece ^. orientation)
           newPiece = piece & orientation .~ newOrientation
       in if isValidMove game newPiece
-         then game & currentPiece .~ Just newPiece
+         then resetSlideState $ game & currentPiece .~ Just newPiece
          else game
 
 isValidMove :: Game -> Tetromino -> Bool

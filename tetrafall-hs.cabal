@@ -90,6 +90,7 @@ test-suite tetrafall-hs-test
   main-is: Spec.hs
   other-modules:
       Types.Grid
+      Types.Slide
       Types.Types
   hs-source-dirs:
       test
