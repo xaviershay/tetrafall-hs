@@ -65,8 +65,6 @@ appEvent :: BrickEvent () Tick -> EventM () Game ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
 appEvent (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt
 appEvent (AppEvent Tick) = do
-    x <- get
-    put x
     modify step
     return ()
 
