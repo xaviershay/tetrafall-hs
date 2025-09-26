@@ -7,6 +7,7 @@ import Tetrafall.Types.Grid (toVector, double, makeDense, overlay, setAt, toList
 
 import qualified Data.Vector as V
 import qualified Data.HashMap.Strict as HM
+import Data.Maybe (fromMaybe)
 
 import Lens.Micro.Platform
 
@@ -36,15 +37,11 @@ translateTetromino tetromino shape =
 getFinalGrid :: Game -> Grid Cell
 getFinalGrid game =
     let baseGrid = game ^. grid
-        maybePiece = game ^. currentPiece
-    in case maybePiece of
-        Nothing -> baseGrid
-        Just piece -> 
-            let tetrominoType' = piece ^. tetrominoType
-                maybeShape = HM.lookup tetrominoType' defaultTetrominoMap
-            in case maybeShape of
-                Nothing -> baseGrid
-                Just shape -> overlay baseGrid (translateTetromino piece shape)
+        pieceGrid = fromMaybe mempty $ do
+          piece <- game ^. currentPiece
+          shape <- HM.lookup (piece ^. tetrominoType) defaultTetrominoMap
+          return (translateTetromino piece shape)
+    in baseGrid <> pieceGrid
 
 playfield :: Game -> Widget ()
 playfield game =
