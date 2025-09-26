@@ -22,6 +22,7 @@ module Tetrafall.Types
   , tetrominoType
   , position
   , orientation
+  , getTetrominoGrid
   ) where
 
 
@@ -49,6 +50,18 @@ data Cell = Empty | Garbage | TetrominoCell TetrominoType
 data Orientation = North | East | South | West
   deriving (Show, Enum, Eq)
 
+rotateCW :: Orientation -> Orientation
+rotateCW North = East
+rotateCW East = South
+rotateCW South = West
+rotateCW West = North
+
+rotateCCW :: Orientation -> Orientation  
+rotateCCW North = West
+rotateCCW West = South
+rotateCCW South = East
+rotateCCW East = North
+
 data Tetromino = Tetromino
   { _tetrominoType :: TetrominoType
   , _position :: Coordinate
@@ -59,6 +72,8 @@ makeLenses ''Tetromino
 data Action =
     ActionLeft
   | ActionRight
+  | ActionRotateCW
+  | ActionRotateCCW
   deriving (Eq, Show)
 
 data Game = Game
@@ -103,6 +118,26 @@ apply ActionRight game =
          then game & currentPiece .~ Just newPiece
          else game
 
+apply ActionRotateCW game =
+  case game ^. currentPiece of
+    Nothing -> game
+    Just piece ->
+      let newOrientation = rotateCW (piece ^. orientation)
+          newPiece = piece & orientation .~ newOrientation
+      in if isValidMove game newPiece
+         then game & currentPiece .~ Just newPiece
+         else game
+
+apply ActionRotateCCW game =
+  case game ^. currentPiece of
+    Nothing -> game
+    Just piece ->
+      let newOrientation = rotateCCW (piece ^. orientation)
+          newPiece = piece & orientation .~ newOrientation
+      in if isValidMove game newPiece
+         then game & currentPiece .~ Just newPiece
+         else game
+
 isValidMove :: Game -> Tetromino -> Bool
 isValidMove game piece =
   let pieceGrid = getTetrominoGrid piece
@@ -114,8 +149,14 @@ getTetrominoGrid piece =
   let shapeGrid = case HashMap.lookup (piece ^. tetrominoType) defaultTetrominoMap of
         Just shape -> shape
         Nothing -> emptyGrid Empty
+      -- Apply rotations based on orientation
+      rotatedGrid = case piece ^. orientation of
+        North -> shapeGrid
+        East -> rotateClockwise shapeGrid
+        South -> rotateClockwise (rotateClockwise shapeGrid)
+        West -> rotateCounterClockwise shapeGrid
       (dx, dy) = piece ^. position
-      translatedCells = map (\((x, y), cell) -> ((x + dx, y + dy), cell)) (toSparse shapeGrid)
+      translatedCells = map (\((x, y), cell) -> ((x + dx, y + dy), cell)) (toSparse rotatedGrid)
   in makeSparse Empty translatedCells
 
 tetrominoI :: Tetromino

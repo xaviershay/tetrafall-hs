@@ -3,11 +3,10 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, makeDense, toList, makeSparse, overlap, isWithinBounds, emptyGrid, overlay)
+import Tetrafall.Types.Grid (toVector, makeDense, overlap, isWithinBounds, emptyGrid, overlay)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V
-import qualified Data.HashMap.Strict as HM
 import Data.Maybe (fromMaybe)
 
 import Lens.Micro.Platform
@@ -24,20 +23,12 @@ import Graphics.Vty.CrossPlatform (mkVty)
 import Graphics.Vty.Config (VtyUserConfig(..), defaultConfig)
 import Graphics.Vty.Attributes.Color (ColorMode(..))
 
-translateTetromino :: Tetromino -> Grid Cell -> Grid Cell
-translateTetromino tetromino shape =
-    let (px, py) = tetromino ^. position
-        cells = toList shape
-        translatedCells = map (\((x, y), cell) -> ((x + px, y + py), cell)) cells
-    in makeSparse Empty translatedCells
-
 getFinalGrid :: Game -> Grid Cell
 getFinalGrid game =
     let baseGrid = game ^. grid
         pieceGrid = fromMaybe (emptyGrid Empty) $ do
           piece <- game ^. currentPiece
-          shape <- HM.lookup (piece ^. tetrominoType) defaultTetrominoMap
-          return (translateTetromino piece shape)
+          return (getTetrominoGrid piece)
     in baseGrid `overlay` pieceGrid
 
 playfield :: Game -> Widget ()
@@ -63,15 +54,11 @@ step game =
         Nothing -> newGame
         Just piece -> 
             let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
-                movedPieceGrid = fromMaybe (emptyGrid Empty) $ do
-                    shape <- HM.lookup (movedPiece ^. tetrominoType) defaultTetrominoMap
-                    return (translateTetromino movedPiece shape)
+                movedPieceGrid = getTetrominoGrid movedPiece
                 baseGrid = newGame ^. grid
             in if overlap baseGrid movedPieceGrid || not (isWithinBounds baseGrid movedPieceGrid)
                then -- Place piece and reset
-                   let currentPieceGrid = fromMaybe (emptyGrid Empty) $ do
-                           shape <- HM.lookup (piece ^. tetrominoType) defaultTetrominoMap
-                           return (translateTetromino piece shape)
+                   let currentPieceGrid = getTetrominoGrid piece
                        newGrid = baseGrid `overlay` currentPieceGrid
                    in newGame & grid .~ newGrid & currentPiece .~ Just tetrominoI
                else -- Move piece

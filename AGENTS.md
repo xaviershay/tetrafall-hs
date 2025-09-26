@@ -120,6 +120,21 @@ Write code that is self-documenting through clear naming. Only add comments when
 
 ## Testing Guidelines
 
+### When to Write Tests
+
+**DO** write tests for:
+- Core game logic and business rules (e.g., `apply` function for Actions)
+- Complex algorithms and data transformations  
+- Functions with multiple code paths or edge cases
+- Grid operations and collision detection
+- State transitions and game mechanics
+
+**DON'T** write tests for:
+- Simple configuration mappings (e.g., KeyboardConfig key mappings)
+- Straightforward data structure accessors/setters
+- Pure configuration without complex logic
+- Simple helper functions with obvious behavior
+
 ### Always Use Proper Test Framework
 When testing new functionality:
 

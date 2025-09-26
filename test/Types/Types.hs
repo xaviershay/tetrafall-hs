@@ -110,5 +110,78 @@ typesTests = testGroup "Types Tests"
               Just p -> _position p
               Nothing -> error "Expected piece after blocked move"
         finalPos @?= _position piece  -- Should not move
+
+    , testCase "ActionRotateCW rotates piece clockwise when valid" $ do
+        let piece = Tetromino 
+              { _tetrominoType = T
+              , _position = (5, 10)
+              , _orientation = North
+              }
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Just piece
+              , _score = 0
+              }
+        let gameAfterRotate = apply ActionRotateCW testGame
+        let newOrientation = case _currentPiece gameAfterRotate of 
+              Just p -> _orientation p
+              Nothing -> error "Expected piece after rotation"
+        newOrientation @?= East
+
+    , testCase "ActionRotateCCW rotates piece counter-clockwise when valid" $ do
+        let piece = Tetromino 
+              { _tetrominoType = T
+              , _position = (5, 10)
+              , _orientation = North
+              }
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Just piece
+              , _score = 0
+              }
+        let gameAfterRotate = apply ActionRotateCCW testGame
+        let newOrientation = case _currentPiece gameAfterRotate of 
+              Just p -> _orientation p
+              Nothing -> error "Expected piece after rotation"
+        newOrientation @?= West
+
+    , testCase "ActionRotateCW does nothing when no current piece" $ do
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Nothing
+              , _score = 0
+              }
+        let gameAfterRotate = apply ActionRotateCW testGame
+        _currentPiece gameAfterRotate @?= Nothing
+
+    , testCase "ActionRotateCCW does nothing when no current piece" $ do
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Nothing
+              , _score = 0
+              }
+        let gameAfterRotate = apply ActionRotateCCW testGame
+        _currentPiece gameAfterRotate @?= Nothing
+
+    , testCase "Multiple rotations work correctly" $ do
+        let piece = Tetromino 
+              { _tetrominoType = T
+              , _position = (5, 10)
+              , _orientation = North
+              }
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Just piece
+              , _score = 0
+              }
+        let gameAfter1CW = apply ActionRotateCW testGame
+        let gameAfter2CW = apply ActionRotateCW gameAfter1CW
+        let gameAfter3CW = apply ActionRotateCW gameAfter2CW
+        let gameAfter4CW = apply ActionRotateCW gameAfter3CW
+        
+        let finalOrientation = case _currentPiece gameAfter4CW of 
+              Just p -> _orientation p
+              Nothing -> error "Expected piece after rotations"
+        finalOrientation @?= North  -- Full circle should return to North
     ]
   ]
