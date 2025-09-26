@@ -80,6 +80,8 @@ executable tetrafall-color-test
 test-suite tetrafall-hs-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
+  other-modules:
+      Types.Grid
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
@@ -88,6 +90,8 @@ test-suite tetrafall-hs-test
     , brick >=2.4
     , microlens-platform
     , mtl
+    , tasty
+    , tasty-hunit
     , tetrafall-hs
     , vector
     , vty >=6.2
