@@ -1,10 +1,9 @@
-module Tetrafall.Types.Grid (makeDense, makeSparse, dimensions, overlay, toList, toVector, setAt, double, Grid) where
+module Tetrafall.Types.Grid (makeDense, makeSparse, dimensions, overlay, toList, toVector, setAt, double, toSparse, overlap, Grid) where
 
 import Tetrafall.Types.Coordinate
 
 import qualified Data.Vector as V
 import Data.Vector (Vector)
-import Data.List (foldl')
 
 data CellData a = 
     Sparse [(Coordinate, a)]
@@ -113,6 +112,17 @@ setAt (x, y) cell grid = case (_cells grid) of
 
 emptyGrid :: Grid a
 emptyGrid = Grid (0, 0) (Dense V.empty)
+
+toSparse :: (Eq a, Monoid a) => Grid a -> [(Coordinate, a)]
+toSparse grid = filter ((/= mempty) . snd) (toList grid)
+
+overlap :: (Eq a, Monoid a) => Grid a -> Grid a -> Bool
+overlap grid1 grid2 = 
+  let sparse1 = toSparse grid1
+      sparse2 = toSparse grid2
+      coords1 = map fst sparse1
+      coords2 = map fst sparse2
+  in any (`elem` coords2) coords1
 
 instance Semigroup (Grid a) where
   (<>) = overlay

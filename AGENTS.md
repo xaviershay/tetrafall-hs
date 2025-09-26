@@ -42,3 +42,59 @@ Remove only the listed items from the import list, keeping the import if other i
 2. Fix warnings by trusting GHC's analysis
 3. Verify with another build
 4. Do not second-guess the compiler's unused import detection
+
+## Avoiding Redundant Comments
+
+When writing code, avoid comments that simply repeat what the code already says clearly.
+
+### Examples of Redundant Comments to Avoid
+
+**Function Comments:**
+```haskell
+-- BAD: Comment just repeats the function name
+-- Translate a tetromino shape to its world position
+translateTetromino :: Tetromino -> Grid Cell -> Grid Cell
+
+-- GOOD: No comment needed, function name is self-explanatory
+translateTetromino :: Tetromino -> Grid Cell -> Grid Cell
+```
+
+**Test Comments:**
+```haskell
+-- BAD: Comment repeats test name
+testCase "Overlay sparse over dense - basic functionality" $ do
+  -- Test overlaying sparse grid on dense background
+  let dense = makeDense (3, 3) 'O'
+
+-- GOOD: No redundant comment
+testCase "Overlay sparse over dense - basic functionality" $ do
+  let dense = makeDense (3, 3) 'O'
+```
+
+**Assertion Comments:**
+```haskell
+-- BAD: Obvious comments on assertions
+lookup (0, 0) resultList @?= Just 'A'  -- Top-left
+lookup (2, 2) resultList @?= Just 'D'  -- Bottom-right
+
+-- GOOD: Let the test structure speak for itself
+lookup (0, 0) resultList @?= Just 'A'
+lookup (2, 2) resultList @?= Just 'D'
+```
+
+### When Comments Are Useful
+
+**Explaining non-obvious logic:**
+```haskell
+-- Use row-major order: (0,0), (1,0), (0,1), (1,1)
+let expected = [((0, 0), 'T'), ((1, 0), 'T'), ((0, 1), 'T'), ((1, 1), 'T')]
+```
+
+**Documenting complex algorithms or business rules:**
+```haskell
+-- Check that last value wins when multiple values exist at same position
+let sparse = makeSparse [((0, 0), 'X'), ((0, 0), 'Y')]
+```
+
+### Principle
+Write code that is self-documenting through clear naming. Only add comments when they provide information that isn't already obvious from reading the code itself.

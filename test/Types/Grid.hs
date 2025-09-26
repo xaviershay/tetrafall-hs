@@ -2,6 +2,7 @@ module Types.Grid (gridTests) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Data.Monoid (Sum(..))
 
 import Tetrafall.Types (Coordinate)
 import Tetrafall.Types.Grid
@@ -65,7 +66,6 @@ gridTests = testGroup "Grid Tests"
   
   , testGroup "Grid overlay function" 
     [ testCase "Overlay sparse over dense - basic functionality" $ do
-        -- Test overlaying sparse grid on dense background
         let dense = makeDense (3, 3) 'O'
         let sparse = makeSparse [((1, 1), 'X'), ((0, 2), 'Y')]
         let result = overlay dense sparse
@@ -81,52 +81,46 @@ gridTests = testGroup "Grid Tests"
         lookup (2, 2) resultList @?= Just 'O'
         
     , testCase "Overlay sparse over dense - empty sparse" $ do
-        -- Overlaying empty sparse grid should leave dense unchanged
         let dense = makeDense (2, 2) 'A'
         let sparse = makeSparse []
         let result = overlay dense sparse
         
         dimensions result @?= (2, 2)
-        -- All cells should remain 'A'
         toList result @?= [((0, 0), 'A'), ((1, 0), 'A'), ((0, 1), 'A'), ((1, 1), 'A')]
         
     , testCase "Overlay sparse over dense - single cell" $ do
-        -- Test with single sparse cell
         let dense = makeDense (3, 3) 'O'
         let sparse = makeSparse [((1, 1), 'X')]
         let result = overlay dense sparse
         
         dimensions result @?= (3, 3)
         let resultList = toList result
-        lookup (1, 1) resultList @?= Just 'X'  -- Changed cell
-        lookup (0, 0) resultList @?= Just 'O'  -- Unchanged cell
+        lookup (1, 1) resultList @?= Just 'X'
+        lookup (0, 0) resultList @?= Just 'O'
         
     , testCase "Overlay sparse over dense - corner positions" $ do
-        -- Test overlaying at corner positions
         let dense = makeDense (3, 3) 'O'
         let sparse = makeSparse [((0, 0), 'A'), ((2, 0), 'B'), ((0, 2), 'C'), ((2, 2), 'D')]
         let result = overlay dense sparse
         
         dimensions result @?= (3, 3)
         let resultList = toList result
-        lookup (0, 0) resultList @?= Just 'A'  -- Top-left
-        lookup (2, 0) resultList @?= Just 'B'  -- Top-right
-        lookup (0, 2) resultList @?= Just 'C'  -- Bottom-left
-        lookup (2, 2) resultList @?= Just 'D'  -- Bottom-right
-        lookup (1, 1) resultList @?= Just 'O'  -- Center unchanged
+        lookup (0, 0) resultList @?= Just 'A'
+        lookup (2, 0) resultList @?= Just 'B'
+        lookup (0, 2) resultList @?= Just 'C'
+        lookup (2, 2) resultList @?= Just 'D'
+        lookup (1, 1) resultList @?= Just 'O'
         
     , testCase "Overlay sparse over dense - overwrite same position" $ do
-        -- Test multiple values at same position (last should win)
         let dense = makeDense (2, 2) 'O'
         let sparse = makeSparse [((0, 0), 'X'), ((0, 0), 'Y')]
         let result = overlay dense sparse
         
         dimensions result @?= (2, 2)
         let resultList = toList result
-        lookup (0, 0) resultList @?= Just 'Y'  -- Last value should win
+        lookup (0, 0) resultList @?= Just 'Y'
         
     , testCase "Overlay sparse over dense - full coverage" $ do
-        -- Test sparse grid that covers all positions of dense grid
         let dense = makeDense (2, 2) 'O'
         let sparse = makeSparse [((0, 0), 'A'), ((1, 0), 'B'), ((0, 1), 'C'), ((1, 1), 'D')]
         let result = overlay dense sparse
@@ -135,7 +129,6 @@ gridTests = testGroup "Grid Tests"
         toList result @?= [((0, 0), 'A'), ((1, 0), 'B'), ((0, 1), 'C'), ((1, 1), 'D')]
         
     , testCase "Overlay sparse over dense - large grid with few sparse cells" $ do
-        -- Test performance/correctness with large background and few overlay cells
         let dense = makeDense (10, 10) 'Z'
         let sparse = makeSparse [((5, 5), 'C'), ((0, 9), 'K')]
         let result = overlay dense sparse
@@ -144,26 +137,20 @@ gridTests = testGroup "Grid Tests"
         let resultList = toList result
         lookup (5, 5) resultList @?= Just 'C'
         lookup (0, 9) resultList @?= Just 'K'
-        lookup (0, 0) resultList @?= Just 'Z'  -- Check an unchanged position
-        -- Verify we have 100 total cells
+        lookup (0, 0) resultList @?= Just 'Z'
         length resultList @?= 100
         
     , testCase "Overlay sparse over dense - boundary positions" $ do
-        -- Test all edge and corner positions on a 3x3 grid
         let dense = makeDense (3, 3) 'O'
         let sparse = makeSparse 
-              [ -- Top edge
-                ((0, 0), '1'), ((1, 0), '2'), ((2, 0), '3')
-                -- Side edges  
+              [ ((0, 0), '1'), ((1, 0), '2'), ((2, 0), '3')
               , ((0, 1), '4'), ((2, 1), '5')
-                -- Bottom edge
               , ((0, 2), '6'), ((1, 2), '7'), ((2, 2), '8')
               ]
         let result = overlay dense sparse
         
         dimensions result @?= (3, 3)
         let resultList = toList result
-        -- Check all border positions
         lookup (0, 0) resultList @?= Just '1'
         lookup (1, 0) resultList @?= Just '2'
         lookup (2, 0) resultList @?= Just '3'
@@ -172,40 +159,139 @@ gridTests = testGroup "Grid Tests"
         lookup (0, 2) resultList @?= Just '6'
         lookup (1, 2) resultList @?= Just '7'
         lookup (2, 2) resultList @?= Just '8'
-        -- Check center remains unchanged
         lookup (1, 1) resultList @?= Just 'O'
         
     , testCase "Overlay sparse over dense - out of bounds cells ignored" $ do
-        -- Test that sparse cells outside dense grid bounds are ignored
-        let dense = makeDense (2, 2) 'D'  -- 2x2 grid: valid coords are (0,0), (1,0), (0,1), (1,1)
+        let dense = makeDense (2, 2) 'D'
         let sparse = makeSparse 
-              [ -- Valid positions
-                ((0, 0), 'A'), ((1, 1), 'B')
-                -- Out of bounds positions (should be ignored)
+              [ ((0, 0), 'A'), ((1, 1), 'B')
               , ((2, 0), 'X'), ((0, 2), 'Y'), ((3, 3), 'Z'), ((-1, 0), 'W'), ((1, -1), 'V')
               ]
         let result = overlay dense sparse
         
-        -- Dimensions should remain the same as dense grid
         dimensions result @?= (2, 2)
         let resultList = toList result
         
-        -- Valid overlay positions should be updated
         lookup (0, 0) resultList @?= Just 'A'
         lookup (1, 1) resultList @?= Just 'B'
         
-        -- Positions not in sparse should retain dense values
         lookup (1, 0) resultList @?= Just 'D'
         lookup (0, 1) resultList @?= Just 'D'
         
-        -- Should still have exactly 4 cells (2x2)
         length resultList @?= 4
         
-        -- Out of bounds coordinates should not appear in result
         lookup (2, 0) resultList @?= Nothing
         lookup (0, 2) resultList @?= Nothing
         lookup (3, 3) resultList @?= Nothing
         lookup (-1, 0) resultList @?= Nothing
         lookup (1, -1) resultList @?= Nothing
+    ]
+
+  , testGroup "Grid overlap function"
+    [ testCase "No overlap - completely separate grids" $ do
+        let grid1 = makeSparse [((0, 0), "A"), ((1, 0), "B")]
+        let grid2 = makeSparse [((2, 0), "X"), ((3, 0), "Y")]
+        overlap grid1 grid2 @?= False
+        overlap grid2 grid1 @?= False
+
+    , testCase "No overlap - same coordinates but one is mempty" $ do
+        let grid1 = makeSparse [((0, 0), mempty), ((1, 0), mempty)]
+        let grid2 = makeSparse [((0, 0), "X"), ((1, 0), "Y")]
+        overlap grid1 grid2 @?= False
+        overlap grid2 grid1 @?= False
+
+    , testCase "No overlap - both have mempty at same coordinates" $ do
+        let grid1 = makeSparse [((0, 0), mempty), ((1, 0), "A")]
+        let grid2 = makeSparse [((0, 0), mempty), ((2, 0), "B")]
+        overlap grid1 grid2 @?= False
+
+    , testCase "Overlap - same coordinates with non-mempty values" $ do
+        let grid1 = makeSparse [((0, 0), "A"), ((1, 0), "B")]
+        let grid2 = makeSparse [((0, 0), "X"), ((2, 0), "Y")]
+        overlap grid1 grid2 @?= True
+        overlap grid2 grid1 @?= True  -- Should be symmetric
+
+    , testCase "Overlap - multiple overlapping coordinates" $ do
+        let grid1 = makeSparse [((0, 0), "A"), ((1, 0), "B"), ((2, 1), "C")]
+        let grid2 = makeSparse [((0, 0), "X"), ((1, 0), "Y"), ((3, 0), "Z")]
+        overlap grid1 grid2 @?= True  -- Overlaps at (0,0) and (1,0)
+
+    , testCase "Overlap - single overlapping coordinate among many" $ do
+        let grid1 = makeSparse [((0, 0), "A"), ((1, 0), "B"), ((2, 0), "C")]
+        let grid2 = makeSparse [((2, 0), "X"), ((3, 0), "Y"), ((4, 0), "Z")]
+        overlap grid1 grid2 @?= True  -- Overlaps only at (2,0)
+
+    , testCase "No overlap - empty grids" $ do
+        let grid1 = makeSparse ([] :: [(Coordinate, String)])
+        let grid2 = makeSparse ([] :: [(Coordinate, String)])
+        overlap grid1 grid2 @?= False
+
+    , testCase "No overlap - one empty grid" $ do
+        let grid1 = makeSparse [((0, 0), "A")]
+        let grid2 = makeSparse ([] :: [(Coordinate, String)])
+        overlap grid1 grid2 @?= False
+        overlap grid2 grid1 @?= False
+
+    , testCase "Overlap with dense grids - no overlap" $ do
+        let grid1 = makeDense (2, 2) mempty
+        let grid2 = makeDense (2, 2) mempty
+        let grid1Modified = setAt (0, 0) "A" grid1
+        let grid2Modified = setAt (1, 1) "B" grid2
+        overlap grid1Modified grid2Modified @?= False
+
+    , testCase "Overlap with dense grids - with overlap" $ do
+        let grid1 = makeDense (2, 2) mempty
+        let grid2 = makeDense (2, 2) mempty
+        let grid1Modified = setAt (0, 0) "A" $ setAt (1, 0) "B" grid1
+        let grid2Modified = setAt (0, 0) "X" $ setAt (0, 1) "Y" grid2
+        overlap grid1Modified grid2Modified @?= True
+
+    , testCase "Overlap with mixed dense/sparse - no overlap" $ do
+        let denseGrid = makeDense (3, 3) mempty
+        let denseModified = setAt (0, 0) "A" $ setAt (1, 1) "B" denseGrid
+        let sparseGrid = makeSparse [((2, 0), "X"), ((0, 2), "Y")]
+        overlap denseModified sparseGrid @?= False
+
+    , testCase "Overlap with mixed dense/sparse - with overlap" $ do
+        let denseGrid = makeDense (3, 3) mempty
+        let denseModified = setAt (0, 0) "A" $ setAt (1, 1) "B" denseGrid
+        let sparseGrid = makeSparse [((0, 0), "X"), ((2, 2), "Y")]
+        overlap denseModified sparseGrid @?= True
+
+    , testCase "Overlap edge case - mempty vs non-mempty boundary" $ do
+        let grid1 = makeSparse [((0, 0), mempty), ((1, 0), "A"), ((2, 0), mempty)]
+        let grid2 = makeSparse [((0, 0), "X"), ((1, 0), mempty), ((2, 0), "Z")]
+        overlap grid1 grid2 @?= False
+
+    , testCase "Overlap with different value types - numeric mempty" $ do
+        let grid1 = makeSparse [((0, 0), 5), ((1, 0), 0), ((2, 0), 3)] :: Grid (Sum Int)
+        let grid2 = makeSparse [((0, 0), 0), ((1, 0), 7), ((2, 0), 2)] :: Grid (Sum Int)
+        overlap grid1 grid2 @?= True
+
+    , testCase "Overlap symmetry property" $ do
+        let grid1 = makeSparse [((0, 0), "A"), ((1, 1), "B")]
+        let grid2 = makeSparse [((0, 0), "X"), ((2, 2), "Y")]
+        let grid3 = makeSparse [((3, 3), "Z")]
+        
+        overlap grid1 grid2 @?= overlap grid2 grid1
+        overlap grid1 grid3 @?= overlap grid3 grid1
+        overlap grid2 grid3 @?= overlap grid3 grid2
+
+    , testCase "Overlap with large coordinates" $ do
+        let grid1 = makeSparse [((1000, 2000), "A"), ((5000, 7000), "B")]
+        let grid2 = makeSparse [((1000, 2000), "X"), ((9000, 1000), "Y")]
+        overlap grid1 grid2 @?= True
+        
+        let grid3 = makeSparse [((1001, 2000), "Z")]
+        overlap grid1 grid3 @?= False
+
+    , testCase "Overlap with negative coordinates" $ do
+        -- Test with negative coordinate values
+        let grid1 = makeSparse [((-1, -1), "A"), ((-5, -10), "B")]
+        let grid2 = makeSparse [((-1, -1), "X"), ((0, 0), "Y")]
+        overlap grid1 grid2 @?= True
+        
+        let grid3 = makeSparse [((-2, -1), "Z")]
+        overlap grid1 grid3 @?= False
     ]
   ]

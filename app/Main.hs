@@ -23,7 +23,6 @@ import Graphics.Vty.CrossPlatform (mkVty)
 import Graphics.Vty.Config (VtyUserConfig(..), defaultConfig)
 import Graphics.Vty.Attributes.Color (ColorMode(..))
 
--- Translate a tetromino shape to its world position
 translateTetromino :: Tetromino -> Grid Cell -> Grid Cell
 translateTetromino tetromino shape =
     let (px, py) = tetromino ^. position
@@ -31,7 +30,6 @@ translateTetromino tetromino shape =
         translatedCells = map (\((x, y), cell) -> ((x + px, y + py), cell)) cells
     in makeSparse translatedCells
 
--- Get the final grid with current piece overlaid
 getFinalGrid :: Game -> Grid Cell
 getFinalGrid game =
     let baseGrid = game ^. grid
