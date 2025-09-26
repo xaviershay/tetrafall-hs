@@ -9,6 +9,8 @@ module Tetrafall.Types
   , Game(..)
   , Tetromino(..)
   , Tick(..)
+  , Action(..)
+  , apply
   , tetrominoI
   , defaultTetrominoMap
   , TetrominoMap
@@ -23,6 +25,7 @@ module Tetrafall.Types
   ) where
 
 
+import qualified Data.HashMap.Strict as HashMap
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Hashable (Hashable(..))
 import Lens.Micro.Platform
@@ -44,14 +47,18 @@ data Cell = Empty | Garbage | TetrominoCell TetrominoType
 
 
 data Orientation = North | East | South | West
-  deriving (Show, Enum)
+  deriving (Show, Enum, Eq)
 
 data Tetromino = Tetromino
   { _tetrominoType :: TetrominoType
   , _position :: Coordinate
   , _orientation :: Orientation
-  }
+  } deriving (Eq, Show)
 makeLenses ''Tetromino
+
+data Action =
+    ActionLeft
+  | ActionRight
 
 data Game = Game
   { _grid :: Grid Cell
@@ -60,14 +67,6 @@ data Game = Game
   }
 
 makeLenses ''Game
-
-
-tetrominoI :: Tetromino
-tetrominoI = Tetromino
-  { _tetrominoType = I
-  , _position = (5, 3)
-  , _orientation = North
-  }
 
 type TetrominoMap = HashMap TetrominoType (Grid Cell)
 
@@ -81,3 +80,46 @@ defaultTetrominoMap = fromList
   , (L, makeSparse Empty [((-1, 0), TetrominoCell L), ((0, 0), TetrominoCell L), ((1, 0), TetrominoCell L), ((1, -1), TetrominoCell L)])
   , (O, makeSparse Empty [((0, 0), TetrominoCell O), ((1, 0), TetrominoCell O), ((0, -1), TetrominoCell O), ((1, -1), TetrominoCell O)])
   ]
+
+apply :: Action -> Game -> Game
+apply ActionLeft game = 
+  case game ^. currentPiece of
+    Nothing -> game
+    Just piece -> 
+      let newPosition = (fst (piece ^. position) - 1, snd (piece ^. position))
+          newPiece = piece & position .~ newPosition
+      in if isValidMove game newPiece
+         then game & currentPiece .~ Just newPiece
+         else game
+
+apply ActionRight game = 
+  case game ^. currentPiece of
+    Nothing -> game
+    Just piece -> 
+      let newPosition = (fst (piece ^. position) + 1, snd (piece ^. position))
+          newPiece = piece & position .~ newPosition
+      in if isValidMove game newPiece
+         then game & currentPiece .~ Just newPiece
+         else game
+
+isValidMove :: Game -> Tetromino -> Bool
+isValidMove game piece =
+  let pieceGrid = getTetrominoGrid piece
+      gameGrid = game ^. grid
+  in isWithinBounds gameGrid pieceGrid && not (overlap gameGrid pieceGrid)
+
+getTetrominoGrid :: Tetromino -> Grid Cell
+getTetrominoGrid piece =
+  let shapeGrid = case HashMap.lookup (piece ^. tetrominoType) defaultTetrominoMap of
+        Just shape -> shape
+        Nothing -> emptyGrid Empty
+      (dx, dy) = piece ^. position
+      translatedCells = map (\((x, y), cell) -> ((x + dx, y + dy), cell)) (toSparse shapeGrid)
+  in makeSparse Empty translatedCells
+
+tetrominoI :: Tetromino
+tetrominoI = Tetromino
+  { _tetrominoType = I
+  , _position = (5, 3)
+  , _orientation = North
+  }

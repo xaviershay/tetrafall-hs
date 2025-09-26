@@ -116,3 +116,37 @@ let sparse = makeSparse [((0, 0), 'X'), ((0, 0), 'Y')]
 
 ### Principle
 Write code that is self-documenting through clear naming. Only add comments when they provide information that isn't already obvious from reading the code itself.
+
+## Testing Guidelines
+
+### Always Use Proper Test Framework
+When testing new functionality:
+
+**DO**: Create unit tests using the existing Tasty test framework following the established patterns
+- Add test modules in the `test/` directory following naming conventions (e.g., `test/Types/Types.hs` for testing `src/Tetrafall/Types.hs`)
+- Import the test module in `test/Spec.hs` and add to the test tree
+- Use `testCase` with descriptive names for individual tests
+- Group related tests with `testGroup`
+
+**DON'T**: Create standalone test files or try to run quick verification scripts
+- Avoid creating temporary test files like `test_apply.hs`
+- Don't use manual verification outside the test framework
+- Don't skip adding tests to the main test suite
+
+### Test Module Structure
+Follow this pattern for new test modules:
+```haskell
+module ModuleName.TestName (testFunctionName) where
+
+import Test.Tasty
+import Test.Tasty.HUnit
+import ModuleName
+
+testFunctionName :: TestTree  
+testFunctionName = testGroup "Feature Description"
+  [ testCase "specific behavior description" $ do
+      -- test implementation
+  ]
+```
+
+**WHY**: Consistent testing ensures reliability and makes it easier to catch regressions. The established test framework provides better error reporting and integration with the build system.

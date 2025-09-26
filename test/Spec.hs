@@ -2,6 +2,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Types.Grid (gridTests)
+import Types.Types (typesTests)
 
 main :: IO ()
 main = defaultMain tests
@@ -10,6 +11,7 @@ tests :: TestTree
 tests = testGroup "Tetrafall Tests"
   [ unitTests
   , gridTests
+  , typesTests
   ]
 
 unitTests :: TestTree
