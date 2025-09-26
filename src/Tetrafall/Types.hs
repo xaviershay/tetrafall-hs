@@ -5,7 +5,7 @@ module Tetrafall.Types
   , TetrominoType(..)
   , Orientation(..)
   , Cell(..)
-  , Grid(..)
+  , Grid
   , Game(..)
   , Tetromino(..)
   , Tick(..)
