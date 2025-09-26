@@ -1,4 +1,4 @@
-module Tetrafall.Types.Grid (makeDense, makeSparse, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise) where
+module Tetrafall.Types.Grid (makeDense, makeSparse, makeSparseWithExtent, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise) where
 
 import Tetrafall.Types.Coordinate
 
@@ -50,6 +50,13 @@ makeSparse empty xs = Grid
   where
     (minX, maxX, minY, maxY) = foldl' updateBounds (maxBound, minBound, maxBound, minBound) (map fst xs)
     updateBounds (minX', maxX', minY', maxY') (x, y) = (min x minX', max x maxX', min y minY', max y maxY')
+
+makeSparseWithExtent :: a -> (Coordinate, Coordinate) -> [(Coordinate, a)] -> Grid a
+makeSparseWithExtent empty extentVal xs = Grid
+    { _extent = extentVal
+    , _cells = Sparse xs
+    , _emptyValue = empty
+    }
 
 -- Overlay foreground grid on top of background grid
 overlay :: Grid a -> Grid a -> Grid a

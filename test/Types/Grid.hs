@@ -43,6 +43,21 @@ gridTests = testGroup "Grid Tests"
         toList grid @?= [((0, 0), "B"), ((0, 1), "B"), ((0, 2), "B")]
     ]
   
+  , testGroup "makeSparseWithExtent function"
+    [ testCase "Extent larger than actual coordinates" $ do
+        let coords = [((0, 0), "X")]
+        let grid = makeSparseWithExtent mempty ((-2, -2), (3, 3)) coords
+        extent grid @?= ((-2, -2), (3, 3))
+        dimensions grid @?= (6, 6)
+        toList grid @?= coords
+
+    , testCase "Empty coords with custom extent" $ do
+        let grid = makeSparseWithExtent mempty ((-1, -1), (1, 1)) ([] :: [(Coordinate, String)])
+        extent grid @?= ((-1, -1), (1, 1))
+        dimensions grid @?= (3, 3)
+        toList grid @?= []
+    ]
+  
   , testGroup "toList function"
     [ testCase "Sparse grid toList preserves input order" $ do
         let coords = [((2, 1), "z"), ((0, 0), "a"), ((1, 3), "x")]
