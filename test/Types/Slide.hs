@@ -2,6 +2,7 @@ module Types.Slide (slideTests) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import System.Random (mkStdGen)
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid
@@ -15,6 +16,7 @@ slideTests = testGroup "Slide Tests"
            , _currentPiece = Just (Tetromino I (4, 10) North)
            , _score = 0
            , _slideState = Sliding (4, 9)  -- Currently sliding
+           , _rng = mkStdGen 42
            }
       
       -- Test left movement

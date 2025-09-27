@@ -26,6 +26,7 @@ dependencies:
 - hashable
 - microlens-platform
 - mtl
+- random
 - unordered-containers
 - vector
 - vty >= 6.2

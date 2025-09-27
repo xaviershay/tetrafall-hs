@@ -39,6 +39,7 @@ library
     , hashable
     , microlens-platform
     , mtl
+    , random
     , unordered-containers
     , vector
     , vty >=6.2
@@ -58,6 +59,7 @@ executable tetrafall
     , hashable
     , microlens-platform
     , mtl
+    , random
     , tetrafall-hs
     , unordered-containers
     , vector
@@ -78,6 +80,7 @@ executable tetrafall-color-test
     , hashable
     , microlens-platform
     , mtl
+    , random
     , tetrafall-hs
     , unordered-containers
     , vector
@@ -101,6 +104,7 @@ test-suite tetrafall-hs-test
     , hashable
     , microlens-platform
     , mtl
+    , random
     , tasty
     , tasty-hunit
     , tetrafall-hs

@@ -2,20 +2,27 @@ module Types.Types (typesTests) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import System.Random (mkStdGen)
+import Lens.Micro.Platform
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid
+
+-- Default test game that can be modified for specific tests
+defaultTestGame :: Game
+defaultTestGame = Game
+  { _grid = makeDense (10, 20) Empty
+  , _currentPiece = Just tetrominoI 
+  , _score = 0
+  , _slideState = CanFall
+  , _rng = mkStdGen 42
+  }
 
 typesTests :: TestTree  
 typesTests = testGroup "Types Tests"
   [ testGroup "Action apply function"
     [ testCase "ActionLeft moves piece left when valid" $ do
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just tetrominoI 
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame
         let originalPos = case _currentPiece testGame of 
               Just p -> _position p
               Nothing -> error "Expected piece"
@@ -27,12 +34,7 @@ typesTests = testGroup "Types Tests"
         snd newPos @?= snd originalPos
 
     , testCase "ActionRight moves piece right when valid" $ do
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just tetrominoI 
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame
         let originalPos = case _currentPiece testGame of 
               Just p -> _position p
               Nothing -> error "Expected piece"
@@ -44,22 +46,12 @@ typesTests = testGroup "Types Tests"
         snd newPos @?= snd originalPos
 
     , testCase "ActionLeft does nothing when no current piece" $ do
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Nothing
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Nothing
         let gameAfterLeft = apply ActionLeft testGame
         _currentPiece gameAfterLeft @?= Nothing
 
     , testCase "ActionRight does nothing when no current piece" $ do
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Nothing
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Nothing
         let gameAfterRight = apply ActionRight testGame
         _currentPiece gameAfterRight @?= Nothing
 
@@ -69,12 +61,7 @@ typesTests = testGroup "Types Tests"
               , _position = (0, 10)  -- At left edge
               , _orientation = North
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterLeft = apply ActionLeft testGame
         let finalPos = case _currentPiece gameAfterLeft of 
               Just p -> _position p
@@ -87,12 +74,7 @@ typesTests = testGroup "Types Tests"
               , _position = (7, 10)  -- Near right edge (I piece is 4 wide)
               , _orientation = North
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterRight = apply ActionRight testGame
         let finalPos = case _currentPiece gameAfterRight of 
               Just p -> _position p
@@ -106,12 +88,9 @@ typesTests = testGroup "Types Tests"
               , _orientation = North
               }
         let gridWithBlockage = setAt (4, 10) Garbage (makeDense (10, 20) Empty)
-        let testGame = Game
-              { _grid = gridWithBlockage
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame 
+              & currentPiece .~ Just piece
+              & grid .~ gridWithBlockage
         let gameAfterLeft = apply ActionLeft testGame
         let finalPos = case _currentPiece gameAfterLeft of 
               Just p -> _position p
@@ -124,12 +103,7 @@ typesTests = testGroup "Types Tests"
               , _position = (5, 10)
               , _orientation = North
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterRotate = apply ActionRotateCW testGame
         let newOrientation = case _currentPiece gameAfterRotate of 
               Just p -> _orientation p
@@ -142,12 +116,7 @@ typesTests = testGroup "Types Tests"
               , _position = (5, 10)
               , _orientation = North
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterRotate = apply ActionRotateCCW testGame
         let newOrientation = case _currentPiece gameAfterRotate of 
               Just p -> _orientation p
@@ -155,22 +124,12 @@ typesTests = testGroup "Types Tests"
         newOrientation @?= West
 
     , testCase "ActionRotateCW does nothing when no current piece" $ do
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Nothing
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Nothing
         let gameAfterRotate = apply ActionRotateCW testGame
         _currentPiece gameAfterRotate @?= Nothing
 
     , testCase "ActionRotateCCW does nothing when no current piece" $ do
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Nothing
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Nothing
         let gameAfterRotate = apply ActionRotateCCW testGame
         _currentPiece gameAfterRotate @?= Nothing
 
@@ -180,12 +139,7 @@ typesTests = testGroup "Types Tests"
               , _position = (5, 10)
               , _orientation = North
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfter1CW = apply ActionRotateCW testGame
         let gameAfter2CW = apply ActionRotateCW gameAfter1CW
         let gameAfter3CW = apply ActionRotateCW gameAfter2CW
@@ -197,12 +151,7 @@ typesTests = testGroup "Types Tests"
         finalOrientation @?= North  -- Full circle should return to North
 
     , testCase "ActionSoftDrop moves piece down when valid" $ do
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just tetrominoI 
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame
         let originalPos = case _currentPiece testGame of 
               Just p -> _position p
               Nothing -> error "Expected piece"
@@ -214,12 +163,7 @@ typesTests = testGroup "Types Tests"
         snd newPos @?= snd originalPos + 1
 
     , testCase "ActionSoftDrop does nothing when no current piece" $ do
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Nothing
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Nothing
         let gameAfterDrop = apply ActionSoftDrop testGame
         _currentPiece gameAfterDrop @?= Nothing
 
@@ -229,12 +173,7 @@ typesTests = testGroup "Types Tests"
               , _position = (4, 17)
               , _orientation = East
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterDrop = apply ActionSoftDrop testGame
         let finalPos = case _currentPiece gameAfterDrop of 
               Just p -> _position p
@@ -248,12 +187,9 @@ typesTests = testGroup "Types Tests"
               , _orientation = North
               }
         let gridWithBlockage = setAt (4, 11) Garbage (makeDense (10, 20) Empty)
-        let testGame = Game
-              { _grid = gridWithBlockage
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame 
+              & currentPiece .~ Just piece
+              & grid .~ gridWithBlockage
         let gameAfterDrop = apply ActionSoftDrop testGame
         let finalPos = case _currentPiece gameAfterDrop of 
               Just p -> _position p
@@ -266,12 +202,7 @@ typesTests = testGroup "Types Tests"
               , _position = (4, 10)
               , _orientation = North
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = Sliding (4, 10)  -- In sliding state
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterDrop = apply ActionSoftDrop testGame
         _slideState gameAfterDrop @?= CanFall  -- Should reset to CanFall
 
@@ -281,12 +212,7 @@ typesTests = testGroup "Types Tests"
               , _position = (4, 5)
               , _orientation = North
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterHardDrop = apply ActionHardDrop testGame
         let finalPos = case _currentPiece gameAfterHardDrop of 
               Just p -> _position p
@@ -295,12 +221,7 @@ typesTests = testGroup "Types Tests"
         snd finalPos @?= 19  -- Should be at bottom (y=19 for I piece in North orientation)
 
     , testCase "ActionHardDrop does nothing when no current piece" $ do
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Nothing
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Nothing
         let gameAfterHardDrop = apply ActionHardDrop testGame
         _currentPiece gameAfterHardDrop @?= Nothing
 
@@ -311,12 +232,9 @@ typesTests = testGroup "Types Tests"
               , _orientation = North
               }
         let gridWithBlockage = setAt (4, 15) Garbage (makeDense (10, 20) Empty)
-        let testGame = Game
-              { _grid = gridWithBlockage
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame 
+              & currentPiece .~ Just piece
+              & grid .~ gridWithBlockage
         let gameAfterHardDrop = apply ActionHardDrop testGame
         let finalPos = case _currentPiece gameAfterHardDrop of 
               Just p -> _position p
@@ -330,12 +248,7 @@ typesTests = testGroup "Types Tests"
               , _position = (4, 5)
               , _orientation = North
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterHardDrop = apply ActionHardDrop testGame
         _slideState gameAfterHardDrop @?= ShouldLock
 
@@ -345,12 +258,7 @@ typesTests = testGroup "Types Tests"
               , _position = (4, 5)
               , _orientation = East
               }
-        let testGame = Game
-              { _grid = makeDense (10, 20) Empty
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterHardDrop = apply ActionHardDrop testGame
         let finalPos = case _currentPiece gameAfterHardDrop of 
               Just p -> _position p
@@ -365,12 +273,9 @@ typesTests = testGroup "Types Tests"
               , _orientation = North
               }
         let gridWithBlockage = setAt (4, 18) Garbage (makeDense (10, 20) Empty)
-        let testGame = Game
-              { _grid = gridWithBlockage
-              , _currentPiece = Just piece
-              , _score = 0
-              , _slideState = CanFall
-              }
+        let testGame = defaultTestGame 
+              & currentPiece .~ Just piece
+              & grid .~ gridWithBlockage
         let gameAfterHardDrop = apply ActionHardDrop testGame
         -- Verify piece is at expected position (above the blockage)
         let finalPos = case _currentPiece gameAfterHardDrop of 

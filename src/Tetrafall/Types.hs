@@ -13,6 +13,7 @@ module Tetrafall.Types
   , SlideState(..)
   , apply
   , tetrominoI
+  , randomTetromino
   , defaultTetrominoMap
   , TetrominoMap
   , dimensions
@@ -21,6 +22,7 @@ module Tetrafall.Types
   , score
   , currentPiece
   , slideState
+  , rng
   , tetrominoType
   , position
   , orientation
@@ -32,6 +34,7 @@ import qualified Data.HashMap.Strict as HashMap
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Hashable (Hashable(..))
 import Lens.Micro.Platform
+import System.Random (StdGen, randomR)
 
 import Tetrafall.Types.Coordinate
 import Tetrafall.Types.Grid
@@ -85,6 +88,7 @@ data Game = Game
   , _currentPiece :: Maybe Tetromino
   , _score :: Int
   , _slideState :: SlideState
+  , _rng :: StdGen
   }
 
 data SlideState = 
@@ -207,3 +211,11 @@ tetrominoI = Tetromino
   , _position = (4, 1)
   , _orientation = North
   }
+
+-- Create a random tetromino at the spawn position
+randomTetromino :: StdGen -> (Tetromino, StdGen)
+randomTetromino gen = 
+  let allTypes = [S, Z, J, L, O, I, T]
+      (index, newGen) = randomR (0, length allTypes - 1) gen
+      selectedType = allTypes !! index
+  in (Tetromino selectedType (4, 1) North, newGen)

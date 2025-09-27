@@ -8,6 +8,7 @@ import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V
 import Data.Maybe (fromMaybe)
+import System.Random (mkStdGen)
 
 import Lens.Micro.Platform
 
@@ -72,18 +73,22 @@ step game =
                                let currentPieceGrid = getTetrominoGrid piece
                                    gridWithPiece = baseGrid `overlay` currentPieceGrid
                                    newGrid = clearLines gridWithPiece
+                                   (newPiece, newRng) = randomTetromino (newGame ^. rng)
                                in newGame & grid .~ newGrid 
-                                         & currentPiece .~ Just tetrominoI 
+                                         & currentPiece .~ Just newPiece
                                          & slideState .~ CanFall
+                                         & rng .~ newRng
                            else -- Piece has moved, continue sliding with new position
                                newGame & slideState .~ Sliding (piece ^. position)
                        ShouldLock -> 
                            let currentPieceGrid = getTetrominoGrid piece
                                gridWithPiece = baseGrid `overlay` currentPieceGrid
                                newGrid = clearLines gridWithPiece
+                               (newPiece, newRng) = randomTetromino (newGame ^. rng)
                            in newGame & grid .~ newGrid 
-                                     & currentPiece .~ Just tetrominoI 
+                                     & currentPiece .~ Just newPiece
                                      & slideState .~ CanFall
+                                     & rng .~ newRng
 
 appEvent :: BrickEvent () Tick -> EventM () Game ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
@@ -130,4 +135,5 @@ defaultGame = Game
   , _score = 0
   , _currentPiece = Just tetrominoI
   , _slideState = CanFall
+  , _rng = mkStdGen 42  -- Fixed seed for reproducible testing, could be randomized
   }
