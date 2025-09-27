@@ -1,6 +1,3 @@
 #!/bin/bash
 
-set -ex
-
-stack build
-stack exec tetrafall
+exec stack runghc app/Main.hs
