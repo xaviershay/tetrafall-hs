@@ -132,14 +132,13 @@ double :: Grid a ->  Grid a
 double grid = case (_cells grid) of
   Sparse _ -> undefined
   Dense originalContents -> Grid
-    { _extent = ((minX * 2, minY * 2), (maxX * 2 + 1, maxY * 2 + 1))
-    , _cells = Dense $ V.fromList $ concatMap doubleRow (V.toList originalContents)
+    { _extent = ((minX * 2, minY), (maxX * 2 + 1, maxY))
+    , _cells = Dense $ V.fromList $ map doubleRow (V.toList originalContents)
     , _emptyValue = _emptyValue grid
     }
     where
       ((minX, minY), (maxX, maxY)) = _extent grid
-      doubleRow row = [doubledRow, doubledRow]
-        where doubledRow = V.fromList $ concatMap (\cell -> [cell, cell]) (V.toList row)
+      doubleRow row = V.fromList $ concatMap (\cell -> [cell, cell]) (V.toList row)
 
 
 setAt :: Eq a => Coordinate -> a -> Grid a -> Grid a

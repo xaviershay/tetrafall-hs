@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, makeDense, overlap, isWithinBounds, emptyGrid, overlay, clearLines, toSparse)
+import Tetrafall.Types.Grid (toVector, makeDense, overlap, isWithinBounds, emptyGrid, overlay, clearLines, toSparse, double)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V
@@ -43,7 +43,7 @@ playfield game =
     hCenter $
     vCenter $
     (border $
-    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (g)))) <+> ( border $ hLimit 6 $ padLeft Max $ str (show s))
+    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> ( border $ hLimit 6 $ padLeft Max $ str (show s))
 
 formatCell :: Cell -> Widget ()
 formatCell Empty = str " "
