@@ -2,7 +2,6 @@ module Types.Slide (slideTests) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
-import System.Random (mkStdGen)
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid
@@ -11,12 +10,10 @@ import Lens.Micro.Platform
 slideTests :: TestTree
 slideTests = testGroup "Slide Tests"
   [ testCase "Actions reset slide state when piece moves" $ do
-      let game = Game
+      let game = defaultGame
            { _grid = makeDense (10, 22) Empty
            , _currentPiece = Just (Tetromino I (4, 10) North)
-           , _score = 0
            , _slideState = Sliding (4, 9)  -- Currently sliding
-           , _rng = mkStdGen 42
            }
       
       -- Test left movement

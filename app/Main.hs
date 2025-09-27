@@ -3,19 +3,20 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, makeDense, overlap, isWithinBounds, emptyGrid, overlay, clearLines, toSparse, double)
+import Tetrafall.Types.Grid (toVector, overlap, isWithinBounds, emptyGrid, overlay, clearLines, toSparse, double)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V
+import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
-import System.Random (mkStdGen)
 
 import Lens.Micro.Platform
 
 import Brick
 import Brick.BChan (newBChan, writeBChan)
 import Brick.Widgets.Border (border)
-import Brick.Widgets.Center (hCenter, vCenter)
+import Brick.Widgets.Center (hCenter, hCenterLayer, vCenter, vCenterLayer)
+
 import qualified Brick.Animation as A
 import Control.Monad (forever, void)
 import Control.Monad.IO.Class (liftIO)
@@ -33,8 +34,17 @@ data CustomEvent =
 data St = St
   { _stAnimationManager :: A.AnimationManager St CustomEvent ()
   , _stGame :: Game
+  , _particleAnimations :: M.Map Location (A.Animation St ())
   }
 makeLenses ''St
+
+startParticleAnimation :: Location -> EventM () St ()
+startParticleAnimation coord = do
+    mgr <- use stAnimationManager
+    a <- use (particleAnimations . at coord)
+    case a of
+        Just {} -> return () -- Animation already running at this location
+        Nothing -> A.startAnimation mgr clip1 100 A.Once (particleAnimations . at coord)
 
 
 getFinalGrid :: Game -> Grid Cell
@@ -45,18 +55,31 @@ getFinalGrid game =
           return (getTetrominoGrid piece)
     in baseGrid `overlay` pieceGrid
 
-playfield :: St -> Widget ()
-playfield st =
+-- Create individual layers for each particle (one layer per particle)
+drawParticleLayerList :: St -> [Widget ()]
+drawParticleLayerList st = map (drawParticleAnimation st) (M.toList (st ^. particleAnimations))
+
+backgroundLayer :: St -> Widget ()
+backgroundLayer st = hCenter $ vCenter $ str " "
+
+-- Foreground layer with the playfield and score
+playfieldLayer :: St -> Widget ()
+playfieldLayer st =
     let
       game = st ^. stGame
       g = getFinalGrid game
       s = game ^. score
     in
-
-    hCenter $
-    vCenter $
+    hCenterLayer $
+    vCenterLayer $
     (border $
     foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> ( border $ hLimit 6 $ padLeft Max $ str (show s))
+
+
+
+drawParticleAnimation :: St -> (Location, A.Animation St ()) -> Widget ()
+drawParticleAnimation st (location, animation) =
+    translateBy location $ A.renderAnimation (const $ str "*") st (Just animation)
 
 formatCell :: Cell -> Widget ()
 formatCell Empty = str " "
@@ -154,6 +177,11 @@ appEvent (AppEvent Tick) = do
                    "Grid:\n" ++ gridString ++ "\n"
     liftIO $ appendFile "tetrafall.log" debugInfo
     modify (stGame %~ step)
+    
+    -- Start animations for all particles
+    newGame <- gets (^. stGame)
+    let locations = map (\(x, y) -> Location (x, y)) (newGame ^. particles)
+    mapM_ startParticleAnimation locations
     return ()
 
 appEvent _ = return ()
@@ -167,7 +195,10 @@ attributes =  attrMap (V.green `on` V.black) $
 
 app :: App St CustomEvent ()
 app =
-    App { appDraw = \s -> [playfield s]
+    App { appDraw = \s -> 
+            [ playfieldLayer s  -- Foreground layer (playfield on top)
+            ] ++ drawParticleLayerList s  -- Background layers (one per particle)
+            ++ [backgroundLayer s]
         , appHandleEvent = appEvent
         , appStartEvent = return ()
         , appAttrMap = const attributes
@@ -187,24 +218,11 @@ main = do
 
     let defaultState = St
           { _stAnimationManager = mgr
-          , _stGame = defaultGame
+          , _stGame = defaultGame { _particles = [(1, 1), (2, 3), (56, 30)] }
+          , _particleAnimations = M.empty
           }
 
     void $ customMain initialVty buildVty (Just chan) app defaultState 
-
-defaultGame :: Game
-defaultGame = Game
-  { _grid =  makeDense (10, 22) Empty
-  , _score = 0
-  , _currentPiece = Just tetrominoI
-  , _slideState = CanFall
-  , _rng = mkStdGen 42  -- Fixed seed for reproducible testing, could be randomized
-  }
-
-drawClickAnimation :: St -> (Location, A.Animation St ()) -> Widget ()
-drawClickAnimation st (l, a) =
-    translateBy l $
-    A.renderAnimation (const $ str " ") st (Just a)
 
 clip1 :: A.Clip a ()
 clip1 =

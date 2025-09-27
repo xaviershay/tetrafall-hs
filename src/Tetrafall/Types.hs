@@ -22,10 +22,12 @@ module Tetrafall.Types
   , currentPiece
   , slideState
   , rng
+  , particles
   , tetrominoType
   , position
   , orientation
   , getTetrominoGrid
+  , defaultGame
   ) where
 
 
@@ -33,7 +35,7 @@ import qualified Data.HashMap.Strict as HashMap
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Hashable (Hashable(..))
 import Lens.Micro.Platform
-import System.Random (StdGen, randomR)
+import System.Random (StdGen, randomR, mkStdGen)
 
 import Tetrafall.Types.Coordinate
 import Tetrafall.Types.Grid
@@ -86,6 +88,7 @@ data Game = Game
   , _score :: Int
   , _slideState :: SlideState
   , _rng :: StdGen
+  , _particles :: [Coordinate]
   }
 
 data SlideState = 
@@ -216,3 +219,13 @@ randomTetromino gen =
       (index, newGen) = randomR (0, length allTypes - 1) gen
       selectedType = allTypes !! index
   in (Tetromino selectedType (4, 1) North, newGen)
+
+defaultGame :: Game
+defaultGame = Game
+  { _grid =  makeDense (10, 22) Empty
+  , _score = 0
+  , _currentPiece = Nothing
+  , _slideState = CanFall
+  , _rng = mkStdGen 42  -- Fixed seed for reproducible testing, could be randomized
+  , _particles = mempty
+  }

@@ -11,7 +11,7 @@ gridTests :: TestTree
 gridTests = testGroup "Grid Tests"
   [ testGroup "Grid creation"
     [ testCase "Dense grid dimensions" $ do
-        let grid = makeDense (3, 4) 0
+        let grid = makeDense (3, 4) (0 :: Int)
         dimensions grid @?= (3, 4)
     
     , testCase "Sparse grid dimensions and contents" $ do
@@ -31,7 +31,7 @@ gridTests = testGroup "Grid Tests"
         toList grid @?= [((0, 0), "X"), ((1, 0), "X"), ((0, 1), "X"), ((1, 1), "X")]
     
     , testCase "Dense grid 1x1" $ do
-        let grid = makeDense (1, 1) 42
+        let grid = makeDense (1, 1) (42 :: Int)
         toList grid @?= [((0, 0), 42)]
     
     , testCase "Dense grid 3x1" $ do

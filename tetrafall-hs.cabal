@@ -36,6 +36,7 @@ library
   build-depends:
       base >=4.7 && <5
     , brick >=2.4
+    , containers
     , hashable
     , microlens-platform
     , mtl
@@ -56,6 +57,7 @@ executable tetrafall
   build-depends:
       base >=4.7 && <5
     , brick >=2.4
+    , containers
     , hashable
     , microlens-platform
     , mtl
@@ -77,6 +79,7 @@ executable tetrafall-color-test
   build-depends:
       base >=4.7 && <5
     , brick >=2.4
+    , containers
     , hashable
     , microlens-platform
     , mtl
@@ -101,6 +104,7 @@ test-suite tetrafall-hs-test
   build-depends:
       base >=4.7 && <5
     , brick >=2.4
+    , containers
     , hashable
     , microlens-platform
     , mtl

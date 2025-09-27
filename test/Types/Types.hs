@@ -18,7 +18,7 @@ defaultTestTetromino pieceType = Tetromino
 
 -- Default test game that can be modified for specific tests
 defaultTestGame :: Game
-defaultTestGame = Game
+defaultTestGame = defaultGame
   { _grid = makeDense (10, 20) Empty
   , _currentPiece = Just tetrominoI 
   , _score = 0
