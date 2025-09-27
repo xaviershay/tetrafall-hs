@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, makeDense, overlap, isWithinBounds, emptyGrid, overlay, clearLines)
+import Tetrafall.Types.Grid (toVector, makeDense, overlap, isWithinBounds, emptyGrid, overlay, clearLines, toSparse)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V
@@ -17,6 +17,7 @@ import Brick.BChan (newBChan, writeBChan)
 import Brick.Widgets.Border (border)
 import Brick.Widgets.Center (hCenter, vCenter)
 import Control.Monad (forever, void)
+import Control.Monad.IO.Class (liftIO)
 
 import Control.Concurrent (threadDelay, forkIO)
 import qualified Graphics.Vty as V
@@ -47,6 +48,35 @@ playfield game =
 formatCell :: Cell -> Widget ()
 formatCell Empty = str " "
 formatCell _ = str "█"
+
+-- Debug functions for logging
+formatCellForDebug :: Cell -> Char
+formatCellForDebug Empty = '.'
+formatCellForDebug (TetrominoCell I) = 'I'
+formatCellForDebug (TetrominoCell T) = 'T'
+formatCellForDebug (TetrominoCell S) = 'S'
+formatCellForDebug (TetrominoCell Z) = 'Z'
+formatCellForDebug (TetrominoCell J) = 'J'
+formatCellForDebug (TetrominoCell L) = 'L'
+formatCellForDebug (TetrominoCell O) = 'O'
+formatCellForDebug Garbage = '#'
+
+debugGridToString :: Grid Cell -> String
+debugGridToString g =
+    let gridVector = toVector g
+        rows = V.toList $ V.map (V.toList . V.map formatCellForDebug) gridVector
+        rowStrings = map (++ "\n") rows
+    in concat rowStrings
+
+debugPieceInfo :: Maybe Tetromino -> String
+debugPieceInfo Nothing = "No current piece"
+debugPieceInfo (Just piece) = 
+    let pieceGrid = getTetrominoGrid piece
+        gridCoords = map fst (toSparse pieceGrid)
+    in "Piece: " ++ show (piece ^. tetrominoType) ++ 
+       " at " ++ show (piece ^. position) ++ 
+       " facing " ++ show (piece ^. orientation) ++
+       " grid coords: " ++ show gridCoords
 
 step :: Game -> Game
 step game = 
@@ -98,6 +128,16 @@ appEvent (VtyEvent (V.EvKey key [])) = do
         Just action -> modify (apply action)
         Nothing -> return ()
 appEvent (AppEvent Tick) = do
+    game <- get
+    let pieceInfo = debugPieceInfo (game ^. currentPiece)
+        finalGrid = getFinalGrid game
+        gridString = debugGridToString finalGrid
+        debugInfo = "=== TICK ===\n" ++ 
+                   pieceInfo ++ "\n" ++
+                   "Score: " ++ show (game ^. score) ++ "\n" ++
+                   "Slide State: " ++ show (game ^. slideState) ++ "\n" ++
+                   "Grid:\n" ++ gridString ++ "\n"
+    liftIO $ appendFile "tetrafall.log" debugInfo
     modify step
     return ()
 
@@ -124,7 +164,7 @@ main = do
     chan <- newBChan 10
     _ <- forkIO $ forever $ do
         writeBChan chan Tick
-        threadDelay 200000 -- decides how fast your game moves
+        threadDelay 1000000 -- decides how fast your game moves
     let buildVty = mkVty $ defaultConfig { configPreferredColorMode = Just FullColor }
     initialVty <- buildVty
     void $ customMain initialVty buildVty (Just chan) app defaultGame

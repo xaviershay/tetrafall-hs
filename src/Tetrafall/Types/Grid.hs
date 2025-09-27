@@ -211,7 +211,7 @@ rotateClockwise grid =
         
     in if null rotatedCells 
        then emptyGrid (_emptyValue grid)
-       else makeSparse (_emptyValue grid) rotatedCells
+       else makeSparseWithExtent (_emptyValue grid) (_extent grid) rotatedCells
 
 -- Rotate a square grid counter-clockwise around its center
 rotateCounterClockwise :: Eq a => Grid a -> Grid a  
@@ -238,7 +238,7 @@ rotateCounterClockwise grid =
         
     in if null rotatedCells
        then emptyGrid (_emptyValue grid)
-       else makeSparse (_emptyValue grid) rotatedCells
+       else makeSparseWithExtent (_emptyValue grid) (_extent grid) rotatedCells
 
 -- Check if a row is completely filled (no empty cells)
 isCompleteLine :: Eq a => a -> Vector a -> Bool

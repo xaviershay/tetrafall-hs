@@ -15,19 +15,37 @@ DO NOT TELL ME I AM ABSOLUTELY RIGHT
 
 ## Using Project Scripts
 
-**ONLY use `bin/test` - no other commands are allowed.**
+**Use `bin/test` for primary validation, debugging scripts for investigation.**
 
 - **DO**: Use `bin/test` for building, running, and testing the program
+- **DO**: Use `stack runghc scripts/script_name.hs` for debugging and investigation scripts
 - **DON'T**: Use `stack test`, `stack build`, or any other stack commands directly
 - **DON'T**: Use `bin/run` or any other bin scripts
 - **DON'T**: Try to run subsets of tests. Always run the full suite, using `bin/test`
 - **DON'T**: Try to build or run the application for verification - `bin/test` handles all necessary validation
 - **WHY**: The `bin/test` script provides consistent error handling and is the single source of truth for project validation
 
-If you need to do something that cannot be accomplished with `bin/test`, pause and ask for assistance rather than using any other commands.
+Available commands:
+- `bin/test` - Primary script. Runs the test suite and handles all building/validation (equivalent to `stack test` with additional flags)
+- `stack runghc scripts/<script>.hs` - For running debugging and investigation scripts in the `scripts/` folder
 
-Available scripts:
-- `bin/test` - The ONLY allowed script. Runs the test suite and handles all building/validation (equivalent to `stack test` with additional flags)
+## Debugging Scripts
+
+All debugging and investigation scripts should be placed in the `scripts/` folder and run using `stack runghc scripts/script_name.hs`.
+
+### Guidelines for Debugging Scripts
+- **DO**: Place all debugging scripts in `scripts/` folder
+- **DO**: Import from project modules (e.g., `import Tetrafall.Types`)
+- **DO**: Use descriptive names like `debug_tetrominos.hs`, `debug_rotation.hs`
+- **DON'T**: Place debugging scripts in the root directory
+- **DON'T**: Create debugging scripts that modify the main codebase
+
+### Running Debugging Scripts
+
+```bash
+# Run a debugging script
+stack runghc scripts/debug_tetrominos.hs
+```
 
 ## Handling GHC Compiler Warnings
 
