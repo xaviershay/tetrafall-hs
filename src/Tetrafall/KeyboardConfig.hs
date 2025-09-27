@@ -18,13 +18,12 @@ data KeyboardConfig = KeyboardConfig
   , hardDropKeys :: [V.Key]
   } deriving (Show, Eq)
 
--- | QWERTY keyboard layout configuration
 qwertyConfig :: KeyboardConfig
 qwertyConfig = KeyboardConfig
   { leftKeys = [V.KLeft, V.KChar 'a']
   , rightKeys = [V.KRight, V.KChar 'd']
-  , rotateCWKeys = [V.KChar 'w']
-  , rotateCCWKeys = [V.KUp]
+  , rotateCWKeys = [V.KUp]
+  , rotateCCWKeys = [V.KChar 'w']
   , softDropKeys = [V.KDown, V.KChar 's']
   , hardDropKeys = [V.KChar ' ']
   }
@@ -33,8 +32,8 @@ colemakConfig :: KeyboardConfig
 colemakConfig = KeyboardConfig
   { leftKeys = [V.KLeft, V.KChar 'a']
   , rightKeys = [V.KRight, V.KChar 's']
-  , rotateCWKeys = [V.KChar 'w']
-  , rotateCCWKeys = [V.KUp]
+  , rotateCWKeys = [V.KUp]
+  , rotateCCWKeys = [V.KChar 'w']
   , softDropKeys = [V.KDown, V.KChar 'r']
   , hardDropKeys = [V.KChar ' ']
   }

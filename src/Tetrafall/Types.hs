@@ -104,7 +104,7 @@ type TetrominoMap = HashMap TetrominoType (Grid Cell)
 defaultTetrominoMap :: TetrominoMap
 defaultTetrominoMap = fromList
   [ (I, makeSparseWithExtent Empty ((-1, -1), (2, 2)) [((- 1, 0), TetrominoCell I), ((0, 0), TetrominoCell I), ((1, 0), TetrominoCell I), ((2, 0), TetrominoCell I)])
-  , (T, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((-1, 0), TetrominoCell T), ((0, 0), TetrominoCell T), ((1, 0), TetrominoCell T), ((0, 1), TetrominoCell T)])
+  , (T, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((-1, 0), TetrominoCell T), ((0, 0), TetrominoCell T), ((1, 0), TetrominoCell T), ((0, -1), TetrominoCell T)])
   , (S, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((0, -1), TetrominoCell S), ((1, -1), TetrominoCell S), ((-1, 0), TetrominoCell S), ((0, 0), TetrominoCell S)])
   , (Z, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((-1, -1), TetrominoCell Z), ((0, -1), TetrominoCell Z), ((0, 0), TetrominoCell Z), ((1, 0), TetrominoCell Z)])
   , (J, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((-1, 0), TetrominoCell J), ((0, 0), TetrominoCell J), ((1, 0), TetrominoCell J), ((-1, -1), TetrominoCell J)])

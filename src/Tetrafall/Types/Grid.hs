@@ -201,9 +201,9 @@ rotateClockwise grid =
             let -- Translate to center
                 relX = fromIntegral x - centerX
                 relY = fromIntegral y - centerY
-                -- Clockwise rotation: (x, y) -> (y, -x)
-                newRelX = relY
-                newRelY = -relX
+                -- Clockwise rotation: (x, y) -> (-y, x)
+                newRelX = -relY
+                newRelY = relX
                 -- Translate back
                 newX = round (newRelX + centerX)
                 newY = round (newRelY + centerY)
@@ -228,9 +228,9 @@ rotateCounterClockwise grid =
             let -- Translate to center
                 relX = fromIntegral x - centerX
                 relY = fromIntegral y - centerY
-                -- Counter-clockwise rotation: (x, y) -> (-y, x)
-                newRelX = -relY
-                newRelY = relX
+                -- Counter-clockwise rotation: (x, y) -> (y, -x)
+                newRelX = relY
+                newRelY = -relX
                 -- Translate back
                 newX = round (newRelX + centerX)
                 newY = round (newRelY + centerY)

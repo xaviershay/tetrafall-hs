@@ -380,18 +380,18 @@ gridTests = testGroup "Grid Tests"
           --          C D         D B
           let grid = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((0, 1), "C"), ((1, 1), "D")]
           let rotated = rotateClockwise grid
-          toList rotated @?= [((0, 1), "A"), ((0, 0), "B"), ((1, 1), "C"), ((1, 0), "D")]
+          toList rotated @?= [((1, 0), "A"), ((1, 1), "B"), ((0, 0), "C"), ((0, 1), "D")]
 
       , testCase "3x3 square clockwise rotation (corners)" $ do
           -- Only test corners to keep it simple
           let grid = makeSparse mempty [((0, 0), "A"), ((2, 0), "C"), ((0, 2), "G"), ((2, 2), "I")]
           let rotated = rotateClockwise grid
-          toList rotated @?= [((0, 2), "A"), ((0, 0), "C"), ((2, 2), "G"), ((2, 0), "I")]
+          toList rotated @?= [((2, 0), "A"), ((2, 2), "C"), ((0, 0), "G"), ((0, 2), "I")]
 
       , testCase "3x3 square with center element" $ do
           let grid = makeSparse mempty [((0, 0), "A"), ((1, 1), "E"), ((2, 2), "I")]
           let rotated = rotateClockwise grid
-          toList rotated @?= [((0, 2), "A"), ((1, 1), "E"), ((2, 0), "I")]
+          toList rotated @?= [((2, 0), "A"), ((1, 1), "E"), ((0, 2), "I")]
       ]
 
     , testGroup "rotateCounterClockwise"
@@ -410,7 +410,7 @@ gridTests = testGroup "Grid Tests"
           --          C D         A C
           let grid = makeSparse mempty [((0, 0), "A"), ((1, 0), "B"), ((0, 1), "C"), ((1, 1), "D")]
           let rotated = rotateCounterClockwise grid
-          toList rotated @?= [((1, 0), "A"), ((1, 1), "B"), ((0, 0), "C"), ((0, 1), "D")]
+          toList rotated @?= [((0, 1), "A"), ((0, 0), "B"), ((1, 1), "C"), ((1, 0), "D")]
       ]
 
     , testGroup "Rotation properties"
