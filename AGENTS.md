@@ -3,7 +3,17 @@
 ## Haskell Specific Things
 
 - **DON'T**: Try to import `foldl'`. That isn't required anymore.
-- **DON'T**: Try to use `stack gchi`. If you want to experiment or do "simple tests", write a tasty unit test instead.
+
+## Interactive Development - STRICTLY PROHIBITED
+
+- **NEVER**: Use `stack ghci`, `ghci`, or any REPL/interactive session
+- **NEVER**: Use `stack repl` or any interactive development commands
+- **NEVER**: Try to "test quickly" or "experiment" in GHCi
+- **NEVER**: Use interactive sessions for debugging, exploration, or verification
+
+**INSTEAD**: Always write proper unit tests using the Tasty framework in the `test/` directory. This is the ONLY acceptable way to verify, test, or experiment with code behavior.
+
+**WHY**: This project uses a disciplined test-driven approach. Interactive sessions bypass our testing infrastructure and quality controls.
 
 ## Using Project Scripts
 

@@ -1,4 +1,4 @@
-module Tetrafall.Types.Grid (makeDense, makeSparse, makeSparseWithExtent, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise) where
+module Tetrafall.Types.Grid (makeDense, makeSparse, makeSparseWithExtent, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise, clearLines) where
 
 import Tetrafall.Types.Coordinate
 
@@ -14,6 +14,25 @@ data Grid a = Grid
   , _cells :: (CellData a)
   , _emptyValue :: a
   }
+
+instance Show a => Show (CellData a) where
+  show (Sparse xs) = "Sparse " ++ show xs
+  show (Dense xs) = "Dense " ++ show xs
+
+instance Show a => Show (Grid a) where
+  show (Grid gridExtent cells emptyValue) = 
+    "Grid { _extent = " ++ show gridExtent ++ 
+    ", _cells = " ++ show cells ++ 
+    ", _emptyValue = " ++ show emptyValue ++ " }"
+
+instance Eq a => Eq (CellData a) where
+  (Sparse xs) == (Sparse ys) = xs == ys
+  (Dense xs) == (Dense ys) = xs == ys
+  _ == _ = undefined -- TODO: Implement
+
+instance Eq a => Eq (Grid a) where
+  (Grid extent1 cells1 emptyValue1) == (Grid extent2 cells2 emptyValue2) =
+    extent1 == extent2 && cells1 == cells2 && emptyValue1 == emptyValue2
 
 toList :: Grid a -> [(Coordinate, a)]
 toList g = case (_cells g) of
@@ -208,3 +227,28 @@ rotateCounterClockwise grid =
     in if null rotatedCells
        then emptyGrid (_emptyValue grid)
        else makeSparse (_emptyValue grid) rotatedCells
+
+-- Check if a row is completely filled (no empty cells)
+isCompleteLine :: Eq a => a -> Vector a -> Bool
+isCompleteLine emptyValue row = V.all (/= emptyValue) row
+
+-- Remove complete lines and shift cells down
+clearLines :: Eq a => Grid a -> Grid a
+clearLines grid = case (_cells grid) of
+  Dense gridVector -> 
+    let emptyValue = _emptyValue grid
+        -- Find lines that are completely filled
+        completeLineIndices = V.filter (\(_, row) -> isCompleteLine emptyValue row) $ V.indexed $ gridVector
+        completeIndices = V.map fst completeLineIndices
+        -- Keep only non-complete lines
+        remainingLines = V.ifilter (\i _ -> i `V.notElem` completeIndices) gridVector
+        -- Calculate how many lines were cleared
+        numClearedLines = V.length completeLineIndices
+        (gridWidth, _) = dimensions grid
+        -- Create empty lines to add at the top
+        emptyLines = V.replicate numClearedLines (V.replicate gridWidth emptyValue)
+        -- Combine empty lines at top with remaining lines
+        newGridVector = emptyLines V.++ remainingLines
+    in grid { _cells = Dense newGridVector }
+  
+  Sparse _ -> grid  -- For sparse grids, we don't support line clearing yet

@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, makeDense, overlap, isWithinBounds, emptyGrid, overlay)
+import Tetrafall.Types.Grid (toVector, makeDense, overlap, isWithinBounds, emptyGrid, overlay, clearLines)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V
@@ -70,7 +70,8 @@ step game =
                            if piece ^. position == originalPos
                            then -- Piece hasn't moved, lock it down
                                let currentPieceGrid = getTetrominoGrid piece
-                                   newGrid = baseGrid `overlay` currentPieceGrid
+                                   gridWithPiece = baseGrid `overlay` currentPieceGrid
+                                   newGrid = clearLines gridWithPiece
                                in newGame & grid .~ newGrid 
                                          & currentPiece .~ Just tetrominoI 
                                          & slideState .~ CanFall

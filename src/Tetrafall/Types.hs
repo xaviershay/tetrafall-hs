@@ -45,7 +45,7 @@ instance Hashable TetrominoType where
   hashWithSalt s = hashWithSalt s . fromEnum
 
 data Cell = Empty | Garbage | TetrominoCell TetrominoType
-  deriving (Eq)
+  deriving (Eq, Ord, Show)
 
 
 

@@ -4,7 +4,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Data.Monoid (Sum(..))
 
-import Tetrafall.Types (Coordinate)
+import Tetrafall.Types (Coordinate, Cell(..))
 import Tetrafall.Types.Grid
 
 gridTests :: TestTree  
@@ -450,6 +450,74 @@ gridTests = testGroup "Grid Tests"
           let clockwise1 = rotateClockwise original
           toList counterClockwise3 @?= toList clockwise1
       ]
+    ]
+
+  , testGroup "Line Clearing Tests"
+    [ testCase "No complete lines - grid unchanged" $ do
+        let grid = makeDense (3, 3) Empty
+            result = clearLines grid
+        result @?= grid
+
+    , testCase "One complete line - middle row cleared" $ do
+        let grid = makeDense (3, 3) Empty
+            -- Fill middle row completely
+            gridWithLine = foldr (\x acc -> setAt (x, 1) Garbage acc) grid [0, 1, 2]
+            result = clearLines gridWithLine
+            expectedGrid = makeDense (3, 3) Empty
+        result @?= expectedGrid
+
+    , testCase "One complete line - bottom row cleared" $ do
+        let grid = makeDense (3, 3) Empty
+            -- Fill bottom row completely
+            gridWithLine = foldr (\x acc -> setAt (x, 2) Garbage acc) grid [0, 1, 2]
+            result = clearLines gridWithLine
+            expectedGrid = makeDense (3, 3) Empty
+        result @?= expectedGrid
+
+    , testCase "Multiple complete lines cleared" $ do
+        let grid = makeDense (3, 4) Empty
+            -- Fill rows 1 and 3 completely
+            gridWithLines = foldr (\x acc -> 
+                                    setAt (x, 1) Garbage $ 
+                                    setAt (x, 3) Garbage acc) grid [0, 1, 2]
+            result = clearLines gridWithLines
+            expectedGrid = makeDense (3, 4) Empty
+        result @?= expectedGrid
+
+    , testCase "Complex line clearing scenario" $ do
+        let grid = makeDense (4, 5) Empty
+            -- Place cells in various positions
+            gridWithCells = setAt (0, 0) Garbage $ 
+                           setAt (1, 1) Garbage $ 
+                           setAt (2, 2) Garbage grid
+            -- Fill row 3 completely  
+            gridWithLine = foldr (\x acc -> setAt (x, 3) Garbage acc) gridWithCells [0, 1, 2, 3]
+            result = clearLines gridWithLine
+            -- After clearing row 3, cells should shift down:
+            -- (0,0) -> (0,1), (1,1) -> (1,2), (2,2) -> (2,3)
+            expectedGrid = setAt (0, 1) Garbage $ 
+                          setAt (1, 2) Garbage $ 
+                          setAt (2, 3) Garbage $ 
+                          makeDense (4, 5) Empty
+        result @?= expectedGrid
+
+    , testCase "Tetris scenario - four lines cleared simultaneously" $ do
+        let grid = makeDense (10, 6) Empty
+            -- Fill bottom four rows completely
+            gridWithLines = foldr (\(x, y) acc -> setAt (x, y) Garbage acc) 
+                                  grid 
+                                  [(x, y) | x <- [0..9], y <- [2, 3, 4, 5]]
+            -- Add some cells in top rows
+            gridWithTopCells = setAt (3, 0) Garbage $ 
+                              setAt (4, 0) Garbage $ 
+                              setAt (5, 1) Garbage gridWithLines
+            result = clearLines gridWithTopCells
+            -- After clearing 4 lines, top cells should move down
+            expectedGrid = setAt (3, 4) Garbage $ 
+                          setAt (4, 4) Garbage $ 
+                          setAt (5, 5) Garbage $ 
+                          makeDense (10, 6) Empty
+        result @?= expectedGrid
     ]
 
   ]
