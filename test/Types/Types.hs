@@ -195,5 +195,84 @@ typesTests = testGroup "Types Tests"
               Just p -> _orientation p
               Nothing -> error "Expected piece after rotations"
         finalOrientation @?= North  -- Full circle should return to North
+
+    , testCase "ActionSoftDrop moves piece down when valid" $ do
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Just tetrominoI 
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let originalPos = case _currentPiece testGame of 
+              Just p -> _position p
+              Nothing -> error "Expected piece"
+        let gameAfterDrop = apply ActionSoftDrop testGame
+        let newPos = case _currentPiece gameAfterDrop of 
+              Just p -> _position p
+              Nothing -> error "Expected piece after move"
+        fst newPos @?= fst originalPos
+        snd newPos @?= snd originalPos + 1
+
+    , testCase "ActionSoftDrop does nothing when no current piece" $ do
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Nothing
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let gameAfterDrop = apply ActionSoftDrop testGame
+        _currentPiece gameAfterDrop @?= Nothing
+
+    , testCase "ActionSoftDrop blocked by bottom boundary" $ do
+        let piece = Tetromino 
+              { _tetrominoType = I
+              , _position = (4, 17)
+              , _orientation = East
+              }
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Just piece
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let gameAfterDrop = apply ActionSoftDrop testGame
+        let finalPos = case _currentPiece gameAfterDrop of 
+              Just p -> _position p
+              Nothing -> error "Expected piece after blocked move"
+        finalPos @?= _position piece  -- Should not move
+
+    , testCase "ActionSoftDrop blocked by existing cells" $ do
+        let piece = Tetromino 
+              { _tetrominoType = I
+              , _position = (4, 10)
+              , _orientation = North
+              }
+        let gridWithBlockage = setAt (4, 11) Garbage (makeDense (10, 20) Empty)
+        let testGame = Game
+              { _grid = gridWithBlockage
+              , _currentPiece = Just piece
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let gameAfterDrop = apply ActionSoftDrop testGame
+        let finalPos = case _currentPiece gameAfterDrop of 
+              Just p -> _position p
+              Nothing -> error "Expected piece after blocked move"
+        finalPos @?= _position piece  -- Should not move
+
+    , testCase "ActionSoftDrop resets slide state" $ do
+        let piece = Tetromino 
+              { _tetrominoType = I
+              , _position = (4, 10)
+              , _orientation = North
+              }
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Just piece
+              , _score = 0
+              , _slideState = Sliding (4, 10)  -- In sliding state
+              }
+        let gameAfterDrop = apply ActionSoftDrop testGame
+        _slideState gameAfterDrop @?= CanFall  -- Should reset to CanFall
     ]
   ]

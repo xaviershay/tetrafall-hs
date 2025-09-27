@@ -76,6 +76,7 @@ data Action =
   | ActionRight
   | ActionRotateCW
   | ActionRotateCCW
+  | ActionSoftDrop
   deriving (Eq, Show)
 
 data Game = Game
@@ -146,6 +147,16 @@ apply ActionRotateCCW game =
     Just piece ->
       let newOrientation = rotateCCW (piece ^. orientation)
           newPiece = piece & orientation .~ newOrientation
+      in if isValidMove game newPiece
+         then resetSlideState $ game & currentPiece .~ Just newPiece
+         else game
+
+apply ActionSoftDrop game = 
+  case game ^. currentPiece of
+    Nothing -> game
+    Just piece -> 
+      let newPosition = (fst (piece ^. position), snd (piece ^. position) + 1)
+          newPiece = piece & position .~ newPosition
       in if isValidMove game newPiece
          then resetSlideState $ game & currentPiece .~ Just newPiece
          else game

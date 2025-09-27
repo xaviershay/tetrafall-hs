@@ -14,6 +14,7 @@ data KeyboardConfig = KeyboardConfig
   , rightKeys :: [V.Key]
   , rotateCWKeys :: [V.Key]
   , rotateCCWKeys :: [V.Key]
+  , softDropKeys :: [V.Key]
   } deriving (Show, Eq)
 
 -- | QWERTY keyboard layout configuration
@@ -23,6 +24,7 @@ qwertyConfig = KeyboardConfig
   , rightKeys = [V.KRight, V.KChar 'd']
   , rotateCWKeys = [V.KChar 'w']
   , rotateCCWKeys = [V.KUp]
+  , softDropKeys = [V.KDown, V.KChar 's']
   }
 
 colemakConfig :: KeyboardConfig
@@ -31,6 +33,7 @@ colemakConfig = KeyboardConfig
   , rightKeys = [V.KRight, V.KChar 's']
   , rotateCWKeys = [V.KChar 'w']
   , rotateCCWKeys = [V.KUp]
+  , softDropKeys = [V.KDown, V.KChar 'r']
   }
 
 defaultConfig :: KeyboardConfig
@@ -42,4 +45,5 @@ getActionForKey config key
   | key `elem` rightKeys config = Just ActionRight
   | key `elem` rotateCWKeys config = Just ActionRotateCW
   | key `elem` rotateCCWKeys config = Just ActionRotateCCW
+  | key `elem` softDropKeys config = Just ActionSoftDrop
   | otherwise = Nothing

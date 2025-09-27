@@ -17,17 +17,19 @@
 
 ## Using Project Scripts
 
-**ALWAYS use `bin/test` instead of `stack` commands directly.**
+**ONLY use `bin/test` - no other commands are allowed.**
 
 - **DO**: Use `bin/test` for building, running, and testing the program
-- **DON'T**: Use `stack test`, `stack build`, or other stack commands directly
-- **DON'T**: Try to run subsets of tests. Always run the full suite, using `bin/test`.
-- **WHY**: The `bin/test` script provides consistent error handling and may include additional project-specific configuration
+- **DON'T**: Use `stack test`, `stack build`, or any other stack commands directly
+- **DON'T**: Use `bin/run` or any other bin scripts
+- **DON'T**: Try to run subsets of tests. Always run the full suite, using `bin/test`
+- **DON'T**: Try to build or run the application for verification - `bin/test` handles all necessary validation
+- **WHY**: The `bin/test` script provides consistent error handling and is the single source of truth for project validation
 
-If you need to do something that cannot be accomplished with the available `bin/` scripts, pause and ask for assistance rather than falling back to direct `stack` commands.
+If you need to do something that cannot be accomplished with `bin/test`, pause and ask for assistance rather than using any other commands.
 
 Available scripts:
-- `bin/test` - Runs the test suite (equivalent to `stack test` with additional flags)
+- `bin/test` - The ONLY allowed script. Runs the test suite and handles all building/validation (equivalent to `stack test` with additional flags)
 
 ## Handling GHC Compiler Warnings
 
@@ -111,6 +113,17 @@ lookup (0, 0) resultList @?= Just 'A'
 lookup (2, 2) resultList @?= Just 'D'
 ```
 
+**State and Value Comments:**
+```haskell
+-- BAD: Comments that just repeat what the code says
+_slideState = Sliding (4, 10)  -- In sliding state
+_slideState gameAfter @?= CanFall  -- Should reset to CanFall
+
+-- GOOD: Let the test case name and code speak for itself
+_slideState = Sliding (4, 10)
+_slideState gameAfter @?= CanFall
+```
+
 ### When Comments Are Useful
 
 **Explaining non-obvious logic:**
@@ -126,7 +139,13 @@ let sparse = makeSparse [((0, 0), 'X'), ((0, 0), 'Y')]
 ```
 
 ### Principle
-Write code that is self-documenting through clear naming. Only add comments when they provide information that isn't already obvious from reading the code itself.
+Write code that is self-documenting through clear naming. **NEVER add comments that simply restate what the code already shows clearly**. This includes:
+- Comments that repeat variable names or values
+- Comments that describe obvious assertions 
+- Comments that restate test case names
+- Comments that describe simple state assignments
+
+Only add comments when they provide information that isn't already obvious from reading the code itself.
 
 ## Testing Guidelines
 
@@ -140,7 +159,7 @@ Write code that is self-documenting through clear naming. Only add comments when
 - State transitions and game mechanics
 
 **DON'T** write tests for:
-- Simple configuration mappings (e.g., KeyboardConfig key mappings)
+- Simple configuration mappings (e.g., KeyboardConfig key mappings) - these are straightforward data mappings without complex logic
 - Straightforward data structure accessors/setters
 - Pure configuration without complex logic
 - Simple helper functions with obvious behavior
