@@ -18,7 +18,9 @@ step game =
         gameWithParticle = game & particles .~ [newParticle] & rng .~ rng2
         newGame = over score ((+) 1) gameWithParticle
     in case newGame ^. currentPiece of
-        Nothing -> newGame
+        Nothing -> 
+            let (newPiece, newRng) = randomTetromino (newGame ^. rng)
+            in newGame & currentPiece .~ Just newPiece & rng .~ newRng
         Just piece -> 
             let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
                 movedPieceGrid = getTetrominoGrid movedPiece
@@ -39,22 +41,18 @@ step game =
                                let currentPieceGrid = getTetrominoGrid piece
                                    gridWithPiece = baseGrid `overlay` currentPieceGrid
                                    newGrid = clearLines gridWithPiece
-                                   (newPiece, newRng) = randomTetromino (newGame ^. rng)
                                in newGame & grid .~ newGrid 
-                                         & currentPiece .~ Just newPiece
+                                         & currentPiece .~ Nothing
                                          & slideState .~ CanFall
-                                         & rng .~ newRng
                            else -- Piece has moved, continue sliding with new position
                                newGame & slideState .~ Sliding (piece ^. position)
                        ShouldLock -> 
                            let currentPieceGrid = getTetrominoGrid piece
                                gridWithPiece = baseGrid `overlay` currentPieceGrid
                                newGrid = clearLines gridWithPiece
-                               (newPiece, newRng) = randomTetromino (newGame ^. rng)
                            in newGame & grid .~ newGrid 
-                                     & currentPiece .~ Just newPiece
+                                     & currentPiece .~ Nothing
                                      & slideState .~ CanFall
-                                     & rng .~ newRng
 
 apply :: Action -> Game -> Game
 apply ActionLeft game = 
