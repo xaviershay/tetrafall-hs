@@ -60,20 +60,21 @@ makeDense (w, h) empty = Grid
   , _emptyValue = empty
   }
 
-makeSparse :: a -> [(Coordinate, a)] -> Grid a
+makeSparse :: Eq a => a -> [(Coordinate, a)] -> Grid a
 makeSparse empty xs = Grid
-    { _extent = if null xs then ((0, 0), (-1, -1)) else ((minX, minY), (maxX, maxY))
-    , _cells = Sparse xs
+    { _extent = if null filteredXs then ((0, 0), (-1, -1)) else ((minX, minY), (maxX, maxY))
+    , _cells = Sparse filteredXs
     , _emptyValue = empty
     }
   where
-    (minX, maxX, minY, maxY) = foldl' updateBounds (maxBound, minBound, maxBound, minBound) (map fst xs)
+    filteredXs = filter ((/= empty) . snd) xs
+    (minX, maxX, minY, maxY) = foldl' updateBounds (maxBound, minBound, maxBound, minBound) (map fst filteredXs)
     updateBounds (minX', maxX', minY', maxY') (x, y) = (min x minX', max x maxX', min y minY', max y maxY')
 
-makeSparseWithExtent :: a -> (Coordinate, Coordinate) -> [(Coordinate, a)] -> Grid a
+makeSparseWithExtent :: Eq a => a -> (Coordinate, Coordinate) -> [(Coordinate, a)] -> Grid a
 makeSparseWithExtent empty extentVal xs = Grid
     { _extent = extentVal
-    , _cells = Sparse xs
+    , _cells = Sparse (filter ((/= empty) . snd) xs)
     , _emptyValue = empty
     }
 
@@ -137,7 +138,7 @@ double grid = case (_cells grid) of
         where doubledRow = V.fromList $ concatMap (\cell -> [cell, cell]) (V.toList row)
 
 
-setAt :: Coordinate -> a -> Grid a -> Grid a
+setAt :: Eq a => Coordinate -> a -> Grid a -> Grid a
 setAt (x, y) cell grid = case (_cells grid) of
   Dense cells -> 
     let ((minX, minY), (maxX, maxY)) = _extent grid
@@ -146,19 +147,26 @@ setAt (x, y) cell grid = case (_cells grid) of
        else grid  -- Ignore out-of-bounds coordinates
   
   Sparse cells -> 
-    let updatedCells = ((x, y), cell) : filter ((/= (x, y)) . fst) cells
+    let filteredCells = filter ((/= (x, y)) . fst) cells
+        updatedCells = if cell == _emptyValue grid
+                      then filteredCells  -- Remove the cell if setting to empty
+                      else ((x, y), cell) : filteredCells  -- Add/update the cell if non-empty
         oldExtent = _extent grid
-        newExtent = if null cells
-                   then ((x, y), (x, y))
-                   else let ((oldMinX, oldMinY), (oldMaxX, oldMaxY)) = oldExtent
+        newExtent = if null updatedCells
+                   then ((0, 0), (-1, -1))  -- Empty grid
+                   else if cell /= _emptyValue grid
+                   then let ((oldMinX, oldMinY), (oldMaxX, oldMaxY)) = oldExtent
                         in ((min x oldMinX, min y oldMinY), (max x oldMaxX, max y oldMaxY))
+                   else oldExtent  -- Don't expand extent when removing cells
     in Grid newExtent (Sparse updatedCells) (_emptyValue grid)
 
 emptyGrid :: a -> Grid a
 emptyGrid empty = Grid ((0, 0), (-1, -1)) (Dense V.empty) empty
 
 toSparse :: Eq a => Grid a -> [(Coordinate, a)]
-toSparse grid = filter ((/= _emptyValue grid) . snd) (toList grid)
+toSparse grid = case (_cells grid) of
+  Sparse xs -> xs
+  Dense _ -> filter ((/= _emptyValue grid) . snd) (toList grid)
 
 overlap :: Eq a => Grid a -> Grid a -> Bool
 overlap grid1 grid2 = 
@@ -175,7 +183,7 @@ isWithinBounds baseGrid pieceGrid =
     in all (\(x, y) -> x >= baseMinX && x <= baseMaxX && y >= baseMinY && y <= baseMaxY) pieceCoords
   
 -- Rotate a square grid clockwise around its center
-rotateClockwise :: Grid a -> Grid a
+rotateClockwise :: Eq a => Grid a -> Grid a
 rotateClockwise grid = 
     let gridCells = toList grid
         ((minX, minY), (maxX, maxY)) = _extent grid
@@ -202,7 +210,7 @@ rotateClockwise grid =
        else makeSparse (_emptyValue grid) rotatedCells
 
 -- Rotate a square grid counter-clockwise around its center
-rotateCounterClockwise :: Grid a -> Grid a  
+rotateCounterClockwise :: Eq a => Grid a -> Grid a  
 rotateCounterClockwise grid =
     let gridCells = toList grid
         ((minX, minY), (maxX, maxY)) = _extent grid
