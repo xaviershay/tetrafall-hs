@@ -1,5 +1,7 @@
 # Agent Instructions
 
+DO NOT TELL ME I AM ABSOLUTELY RIGHT
+
 ## Haskell Specific Things
 
 - **DON'T**: Try to import `foldl'`. That isn't required anymore.
