@@ -4,6 +4,7 @@ module Main (main) where
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid (toVector, overlap, isWithinBounds, emptyGrid, overlay, clearLines, toSparse, double)
+import Tetrafall.Game (step, apply, getTetrominoGrid)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V
@@ -114,48 +115,6 @@ debugPieceInfo (Just piece) =
        " facing " ++ show (piece ^. orientation) ++
        " grid coords: " ++ show gridCoords
 
-step :: Game -> Game
-step game = 
-    let newGame = over score ((+) 1) game
-    in case newGame ^. currentPiece of
-        Nothing -> newGame
-        Just piece -> 
-            let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
-                movedPieceGrid = getTetrominoGrid movedPiece
-                baseGrid = newGame ^. grid
-                canFall = not (overlap baseGrid movedPieceGrid) && isWithinBounds baseGrid movedPieceGrid
-            in if canFall
-               then -- Piece can fall normally, reset slide state
-                   newGame & currentPiece .~ Just movedPiece & slideState .~ CanFall
-               else -- Piece cannot fall, check slide state
-                   case newGame ^. slideState of
-                       CanFall -> 
-                           -- First time piece can't fall, enter sliding state
-                           newGame & slideState .~ Sliding (piece ^. position)
-                       Sliding originalPos -> 
-                           -- Check if piece has moved since sliding started
-                           if piece ^. position == originalPos
-                           then -- Piece hasn't moved, lock it down
-                               let currentPieceGrid = getTetrominoGrid piece
-                                   gridWithPiece = baseGrid `overlay` currentPieceGrid
-                                   newGrid = clearLines gridWithPiece
-                                   (newPiece, newRng) = randomTetromino (newGame ^. rng)
-                               in newGame & grid .~ newGrid 
-                                         & currentPiece .~ Just newPiece
-                                         & slideState .~ CanFall
-                                         & rng .~ newRng
-                           else -- Piece has moved, continue sliding with new position
-                               newGame & slideState .~ Sliding (piece ^. position)
-                       ShouldLock -> 
-                           let currentPieceGrid = getTetrominoGrid piece
-                               gridWithPiece = baseGrid `overlay` currentPieceGrid
-                               newGrid = clearLines gridWithPiece
-                               (newPiece, newRng) = randomTetromino (newGame ^. rng)
-                           in newGame & grid .~ newGrid 
-                                     & currentPiece .~ Just newPiece
-                                     & slideState .~ CanFall
-                                     & rng .~ newRng
-
 appEvent :: BrickEvent () CustomEvent -> EventM () St ()
 appEvent (AppEvent (AnimationUpdate act)) = act
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
@@ -180,7 +139,7 @@ appEvent (AppEvent Tick) = do
     
     -- Start animations for all particles
     newGame <- gets (^. stGame)
-    let locations = map (\(x, y) -> Location (x, y)) (newGame ^. particles)
+    let locations = map (\p -> let (x, y) = p ^. particleLocation in Location (round x, round y)) (newGame ^. particles)
     mapM_ startParticleAnimation locations
     return ()
 
@@ -218,7 +177,7 @@ main = do
 
     let defaultState = St
           { _stAnimationManager = mgr
-          , _stGame = defaultGame { _particles = [(1, 1), (2, 3), (56, 30)] }
+          , _stGame = defaultGame
           , _particleAnimations = M.empty
           }
 

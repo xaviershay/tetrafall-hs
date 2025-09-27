@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Tetrafall.Game
       Tetrafall.KeyboardConfig
       Tetrafall.Types
       Tetrafall.Types.Coordinate
@@ -95,6 +96,7 @@ test-suite tetrafall-hs-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Game
       Types.Grid
       Types.Slide
       Types.Types

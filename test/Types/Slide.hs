@@ -5,6 +5,7 @@ import Test.Tasty.HUnit
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid
+import Tetrafall.Game
 import Lens.Micro.Platform
 
 slideTests :: TestTree
