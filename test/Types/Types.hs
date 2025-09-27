@@ -8,6 +8,14 @@ import Lens.Micro.Platform
 import Tetrafall.Types
 import Tetrafall.Types.Grid
 
+-- Default test tetromino at origin with North orientation
+defaultTestTetromino :: TetrominoType -> Tetromino
+defaultTestTetromino pieceType = Tetromino
+  { _tetrominoType = pieceType
+  , _position = (0, 0)
+  , _orientation = North
+  }
+
 -- Default test game that can be modified for specific tests
 defaultTestGame :: Game
 defaultTestGame = Game
@@ -56,11 +64,7 @@ typesTests = testGroup "Types Tests"
         _currentPiece gameAfterRight @?= Nothing
 
     , testCase "ActionLeft blocked by left boundary" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (0, 10)  -- At left edge
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino I & position .~ (0, 10)  -- At left edge
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterLeft = apply ActionLeft testGame
         let finalPos = case _currentPiece gameAfterLeft of 
@@ -69,11 +73,7 @@ typesTests = testGroup "Types Tests"
         finalPos @?= _position piece  -- Should not move
 
     , testCase "ActionRight blocked by right boundary" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (7, 10)  -- Near right edge (I piece is 4 wide)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino I & position .~ (7, 10)  -- Near right edge (I piece is 4 wide)
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterRight = apply ActionRight testGame
         let finalPos = case _currentPiece gameAfterRight of 
@@ -82,11 +82,7 @@ typesTests = testGroup "Types Tests"
         finalPos @?= _position piece  -- Should not move
 
     , testCase "ActionLeft blocked by existing cells" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (5, 10)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino I & position .~ (5, 10)
         let gridWithBlockage = setAt (4, 10) Garbage (makeDense (10, 20) Empty)
         let testGame = defaultTestGame 
               & currentPiece .~ Just piece
@@ -98,11 +94,7 @@ typesTests = testGroup "Types Tests"
         finalPos @?= _position piece  -- Should not move
 
     , testCase "ActionRotateCW rotates piece clockwise when valid" $ do
-        let piece = Tetromino 
-              { _tetrominoType = T
-              , _position = (5, 10)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino T & position .~ (5, 10)
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterRotate = apply ActionRotateCW testGame
         let newOrientation = case _currentPiece gameAfterRotate of 
@@ -111,11 +103,7 @@ typesTests = testGroup "Types Tests"
         newOrientation @?= East
 
     , testCase "ActionRotateCCW rotates piece counter-clockwise when valid" $ do
-        let piece = Tetromino 
-              { _tetrominoType = T
-              , _position = (5, 10)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino T & position .~ (5, 10)
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterRotate = apply ActionRotateCCW testGame
         let newOrientation = case _currentPiece gameAfterRotate of 
@@ -134,11 +122,7 @@ typesTests = testGroup "Types Tests"
         _currentPiece gameAfterRotate @?= Nothing
 
     , testCase "Multiple rotations work correctly" $ do
-        let piece = Tetromino 
-              { _tetrominoType = T
-              , _position = (5, 10)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino T & position .~ (5, 10)
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfter1CW = apply ActionRotateCW testGame
         let gameAfter2CW = apply ActionRotateCW gameAfter1CW
@@ -168,11 +152,9 @@ typesTests = testGroup "Types Tests"
         _currentPiece gameAfterDrop @?= Nothing
 
     , testCase "ActionSoftDrop blocked by bottom boundary" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (4, 17)
-              , _orientation = East
-              }
+        let piece = defaultTestTetromino I 
+              & position .~ (4, 17)
+              & orientation .~ East
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterDrop = apply ActionSoftDrop testGame
         let finalPos = case _currentPiece gameAfterDrop of 
@@ -181,11 +163,7 @@ typesTests = testGroup "Types Tests"
         finalPos @?= _position piece  -- Should not move
 
     , testCase "ActionSoftDrop blocked by existing cells" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (4, 10)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino I & position .~ (4, 10)
         let gridWithBlockage = setAt (4, 11) Garbage (makeDense (10, 20) Empty)
         let testGame = defaultTestGame 
               & currentPiece .~ Just piece
@@ -197,21 +175,13 @@ typesTests = testGroup "Types Tests"
         finalPos @?= _position piece  -- Should not move
 
     , testCase "ActionSoftDrop resets slide state" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (4, 10)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino I & position .~ (4, 10)
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterDrop = apply ActionSoftDrop testGame
         _slideState gameAfterDrop @?= CanFall  -- Should reset to CanFall
 
     , testCase "ActionHardDrop moves piece to bottom when valid" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (4, 5)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino I & position .~ (4, 5)
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterHardDrop = apply ActionHardDrop testGame
         let finalPos = case _currentPiece gameAfterHardDrop of 
@@ -226,11 +196,7 @@ typesTests = testGroup "Types Tests"
         _currentPiece gameAfterHardDrop @?= Nothing
 
     , testCase "ActionHardDrop stops above existing cells" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (4, 5)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino I & position .~ (4, 5)
         let gridWithBlockage = setAt (4, 15) Garbage (makeDense (10, 20) Empty)
         let testGame = defaultTestGame 
               & currentPiece .~ Just piece
@@ -243,21 +209,15 @@ typesTests = testGroup "Types Tests"
         snd finalPos @?= 14  -- Should stop above the blockage
 
     , testCase "ActionHardDrop sets slide state to ShouldLock" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (4, 5)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino I & position .~ (4, 5)
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterHardDrop = apply ActionHardDrop testGame
         _slideState gameAfterHardDrop @?= ShouldLock
 
     , testCase "ActionHardDrop works with rotated pieces" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (4, 5)
-              , _orientation = East
-              }
+        let piece = defaultTestTetromino I 
+              & position .~ (4, 5)
+              & orientation .~ East
         let testGame = defaultTestGame & currentPiece .~ Just piece
         let gameAfterHardDrop = apply ActionHardDrop testGame
         let finalPos = case _currentPiece gameAfterHardDrop of 
@@ -267,11 +227,7 @@ typesTests = testGroup "Types Tests"
         snd finalPos @?= 17  -- Should be at bottom for rotated I piece (East orientation extends downward less)
 
     , testCase "ActionHardDrop prevents sliding - piece should lock immediately" $ do
-        let piece = Tetromino 
-              { _tetrominoType = I
-              , _position = (4, 5)
-              , _orientation = North
-              }
+        let piece = defaultTestTetromino I & position .~ (4, 5)
         let gridWithBlockage = setAt (4, 18) Garbage (makeDense (10, 20) Empty)
         let testGame = defaultTestGame 
               & currentPiece .~ Just piece
@@ -292,5 +248,22 @@ typesTests = testGroup "Types Tests"
           Nothing -> assertFailure "Expected piece after move"
         -- But slide state should be reset to CanFall after any movement
         _slideState gameAfterMove @?= CanFall
+    ]
+
+  , testGroup "Tetromino rotation equivalence"
+    [ testCase "O tetromino - all four rotated states are equivalent" $ do
+        let oTetromino = defaultTestTetromino O
+        
+        -- Get grid for each rotation state
+        let gridNorth = getTetrominoGrid oTetromino
+        let gridEast = getTetrominoGrid (oTetromino & orientation .~ East)
+        let gridSouth = getTetrominoGrid (oTetromino & orientation .~ South) 
+        let gridWest = getTetrominoGrid (oTetromino & orientation .~ West)
+        
+        -- All grids should be equivalent for O piece
+        gridNorth @?= gridEast
+        gridEast @?= gridSouth
+        gridSouth @?= gridWest
+        gridWest @?= gridNorth
     ]
   ]

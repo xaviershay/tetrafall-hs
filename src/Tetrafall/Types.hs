@@ -109,7 +109,7 @@ defaultTetrominoMap = fromList
   , (Z, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((-1, -1), TetrominoCell Z), ((0, -1), TetrominoCell Z), ((0, 0), TetrominoCell Z), ((1, 0), TetrominoCell Z)])
   , (J, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((-1, 0), TetrominoCell J), ((0, 0), TetrominoCell J), ((1, 0), TetrominoCell J), ((-1, -1), TetrominoCell J)])
   , (L, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((-1, 0), TetrominoCell L), ((0, 0), TetrominoCell L), ((1, 0), TetrominoCell L), ((1, -1), TetrominoCell L)])
-  , (O, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((0, 0), TetrominoCell O), ((1, 0), TetrominoCell O), ((0, -1), TetrominoCell O), ((1, -1), TetrominoCell O)])
+  , (O, makeSparseWithExtent Empty ((0, -1), (1, 0)) [((0, 0), TetrominoCell O), ((1, 0), TetrominoCell O), ((0, -1), TetrominoCell O), ((1, -1), TetrominoCell O)])
   ]
 
 -- Helper function to reset slide state when piece moves

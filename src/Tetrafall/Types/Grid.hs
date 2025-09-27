@@ -4,6 +4,8 @@ import Tetrafall.Types.Coordinate
 
 import qualified Data.Vector as V
 import Data.Vector (Vector)
+import Data.List (sortBy)
+import Data.Function (on)
 
 data CellData a = 
     Sparse [(Coordinate, a)]
@@ -26,7 +28,9 @@ instance Show a => Show (Grid a) where
     ", _emptyValue = " ++ show emptyValue ++ " }"
 
 instance Eq a => Eq (CellData a) where
-  (Sparse xs) == (Sparse ys) = xs == ys
+  (Sparse xs) == (Sparse ys) = 
+    let sortByCoord = sortBy (compare `on` fst)
+    in sortByCoord xs == sortByCoord ys
   (Dense xs) == (Dense ys) = xs == ys
   _ == _ = undefined -- TODO: Implement
 
