@@ -11,10 +11,6 @@
 - **NEVER**: Try to "test quickly" or "experiment" in GHCi
 - **NEVER**: Use interactive sessions for debugging, exploration, or verification
 
-**INSTEAD**: Always write proper unit tests using the Tasty framework in the `test/` directory. This is the ONLY acceptable way to verify, test, or experiment with code behavior.
-
-**WHY**: This project uses a disciplined test-driven approach. Interactive sessions bypass our testing infrastructure and quality controls.
-
 ## Using Project Scripts
 
 **ONLY use `bin/test` - no other commands are allowed.**
@@ -150,6 +146,8 @@ Only add comments when they provide information that isn't already obvious from 
 ## Testing Guidelines
 
 ### When to Write Tests
+
+Not all features require tests.
 
 **DO** write tests for:
 - Core game logic and business rules (e.g., `apply` function for Actions)

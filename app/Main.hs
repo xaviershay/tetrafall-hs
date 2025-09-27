@@ -77,6 +77,13 @@ step game =
                                          & slideState .~ CanFall
                            else -- Piece has moved, continue sliding with new position
                                newGame & slideState .~ Sliding (piece ^. position)
+                       ShouldLock -> 
+                           let currentPieceGrid = getTetrominoGrid piece
+                               gridWithPiece = baseGrid `overlay` currentPieceGrid
+                               newGrid = clearLines gridWithPiece
+                           in newGame & grid .~ newGrid 
+                                     & currentPiece .~ Just tetrominoI 
+                                     & slideState .~ CanFall
 
 appEvent :: BrickEvent () Tick -> EventM () Game ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt

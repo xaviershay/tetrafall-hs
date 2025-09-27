@@ -77,6 +77,7 @@ data Action =
   | ActionRotateCW
   | ActionRotateCCW
   | ActionSoftDrop
+  | ActionHardDrop
   deriving (Eq, Show)
 
 data Game = Game
@@ -89,6 +90,7 @@ data Game = Game
 data SlideState = 
     CanFall  -- Piece can still fall normally
   | Sliding Coordinate  -- Piece cannot fall, tracking position for slide detection
+  | ShouldLock  -- Piece should be locked immediately (e.g., after hard drop)
   deriving (Eq, Show)
 
 makeLenses ''Game
@@ -160,6 +162,23 @@ apply ActionSoftDrop game =
       in if isValidMove game newPiece
          then resetSlideState $ game & currentPiece .~ Just newPiece
          else game
+
+apply ActionHardDrop game = 
+  case game ^. currentPiece of
+    Nothing -> game
+    Just piece -> 
+      let finalPiece = hardDropPiece game piece
+      in game & currentPiece .~ Just finalPiece & slideState .~ ShouldLock
+
+hardDropPiece :: Game -> Tetromino -> Tetromino
+hardDropPiece game piece =
+  let (x, y) = piece ^. position
+      tryPosition newY = 
+        let candidatePiece = piece & position .~ (x, newY)
+        in if isValidMove game candidatePiece
+           then tryPosition (newY + 1)
+           else piece & position .~ (x, newY - 1)
+  in tryPosition (y + 1)
 
 isValidMove :: Game -> Tetromino -> Bool
 isValidMove game piece =

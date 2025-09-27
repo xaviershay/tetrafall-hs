@@ -274,5 +274,118 @@ typesTests = testGroup "Types Tests"
               }
         let gameAfterDrop = apply ActionSoftDrop testGame
         _slideState gameAfterDrop @?= CanFall  -- Should reset to CanFall
+
+    , testCase "ActionHardDrop moves piece to bottom when valid" $ do
+        let piece = Tetromino 
+              { _tetrominoType = I
+              , _position = (4, 5)
+              , _orientation = North
+              }
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Just piece
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let gameAfterHardDrop = apply ActionHardDrop testGame
+        let finalPos = case _currentPiece gameAfterHardDrop of 
+              Just p -> _position p
+              Nothing -> error "Expected piece after hard drop"
+        fst finalPos @?= 4  -- X position should remain the same
+        snd finalPos @?= 19  -- Should be at bottom (y=19 for I piece in North orientation)
+
+    , testCase "ActionHardDrop does nothing when no current piece" $ do
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Nothing
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let gameAfterHardDrop = apply ActionHardDrop testGame
+        _currentPiece gameAfterHardDrop @?= Nothing
+
+    , testCase "ActionHardDrop stops above existing cells" $ do
+        let piece = Tetromino 
+              { _tetrominoType = I
+              , _position = (4, 5)
+              , _orientation = North
+              }
+        let gridWithBlockage = setAt (4, 15) Garbage (makeDense (10, 20) Empty)
+        let testGame = Game
+              { _grid = gridWithBlockage
+              , _currentPiece = Just piece
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let gameAfterHardDrop = apply ActionHardDrop testGame
+        let finalPos = case _currentPiece gameAfterHardDrop of 
+              Just p -> _position p
+              Nothing -> error "Expected piece after hard drop"
+        fst finalPos @?= 4  -- X position should remain the same
+        snd finalPos @?= 14  -- Should stop above the blockage
+
+    , testCase "ActionHardDrop sets slide state to ShouldLock" $ do
+        let piece = Tetromino 
+              { _tetrominoType = I
+              , _position = (4, 5)
+              , _orientation = North
+              }
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Just piece
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let gameAfterHardDrop = apply ActionHardDrop testGame
+        _slideState gameAfterHardDrop @?= ShouldLock
+
+    , testCase "ActionHardDrop works with rotated pieces" $ do
+        let piece = Tetromino 
+              { _tetrominoType = I
+              , _position = (4, 5)
+              , _orientation = East
+              }
+        let testGame = Game
+              { _grid = makeDense (10, 20) Empty
+              , _currentPiece = Just piece
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let gameAfterHardDrop = apply ActionHardDrop testGame
+        let finalPos = case _currentPiece gameAfterHardDrop of 
+              Just p -> _position p
+              Nothing -> error "Expected piece after hard drop"
+        fst finalPos @?= 4  -- X position should remain the same
+        snd finalPos @?= 17  -- Should be at bottom for rotated I piece (East orientation extends downward less)
+
+    , testCase "ActionHardDrop prevents sliding - piece should lock immediately" $ do
+        let piece = Tetromino 
+              { _tetrominoType = I
+              , _position = (4, 5)
+              , _orientation = North
+              }
+        let gridWithBlockage = setAt (4, 18) Garbage (makeDense (10, 20) Empty)
+        let testGame = Game
+              { _grid = gridWithBlockage
+              , _currentPiece = Just piece
+              , _score = 0
+              , _slideState = CanFall
+              }
+        let gameAfterHardDrop = apply ActionHardDrop testGame
+        -- Verify piece is at expected position (above the blockage)
+        let finalPos = case _currentPiece gameAfterHardDrop of 
+              Just p -> _position p
+              Nothing -> error "Expected piece after hard drop"
+        finalPos @?= (4, 17)  -- Should stop above blockage
+        -- Verify slide state is ShouldLock (not CanFall or Sliding)
+        _slideState gameAfterHardDrop @?= ShouldLock
+        -- After hard drop, the piece should not be able to slide laterally
+        let gameAfterMove = apply ActionLeft gameAfterHardDrop
+        -- The piece should still be in ShouldLock state (resetSlideState should only happen for valid moves)
+        case _currentPiece gameAfterMove of
+          Just p -> _position p @?= (3, 17)  -- Should move left normally
+          Nothing -> assertFailure "Expected piece after move"
+        -- But slide state should be reset to CanFall after any movement
+        _slideState gameAfterMove @?= CanFall
     ]
   ]

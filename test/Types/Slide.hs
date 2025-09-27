@@ -49,6 +49,13 @@ simulateStep game =
                                    & slideState .~ CanFall
                        else -- Piece has moved, continue sliding with new position
                            game & slideState .~ Sliding (piece ^. position)
+                   ShouldLock -> 
+                       -- Piece should be locked immediately (e.g., after hard drop)
+                       let currentPieceGrid = getTetrominoGrid piece
+                           newGrid = baseGrid `overlay` currentPieceGrid
+                       in game & grid .~ newGrid 
+                               & currentPiece .~ Just tetrominoI 
+                               & slideState .~ CanFall
 
 slideTests :: TestTree
 slideTests = testGroup "Slide Tests"
@@ -133,5 +140,6 @@ slideTests = testGroup "Slide Tests"
       case gameAfterSecondStep ^. slideState of
         Sliding _ -> return ()  -- Should still be sliding
         CanFall -> assertFailure "Piece should still be sliding, not able to fall"
+        ShouldLock -> assertFailure "Piece shouldn't be set to lock in this scenario"
         -- Note: The piece shouldn't lock because it did move (even though it's back to original position)
   ]
