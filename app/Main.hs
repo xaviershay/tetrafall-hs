@@ -16,6 +16,7 @@ import Brick
 import Brick.BChan (newBChan, writeBChan)
 import Brick.Widgets.Border (border)
 import Brick.Widgets.Center (hCenter, vCenter)
+import qualified Brick.Animation as A
 import Control.Monad (forever, void)
 import Control.Monad.IO.Class (liftIO)
 
@@ -25,6 +26,17 @@ import Graphics.Vty.CrossPlatform (mkVty)
 import Graphics.Vty.Config (VtyUserConfig(..), defaultConfig)
 import Graphics.Vty.Attributes.Color (ColorMode(..))
 
+data CustomEvent =
+      Tick
+    | AnimationUpdate (EventM () St ())
+
+data St = St
+  { _stAnimationManager :: A.AnimationManager St CustomEvent ()
+  , _stGame :: Game
+  }
+makeLenses ''St
+
+
 getFinalGrid :: Game -> Grid Cell
 getFinalGrid game =
     let baseGrid = game ^. grid
@@ -33,9 +45,10 @@ getFinalGrid game =
           return (getTetrominoGrid piece)
     in baseGrid `overlay` pieceGrid
 
-playfield :: Game -> Widget ()
-playfield game =
+playfield :: St -> Widget ()
+playfield st =
     let
+      game = st ^. stGame
       g = getFinalGrid game
       s = game ^. score
     in
@@ -120,16 +133,18 @@ step game =
                                      & slideState .~ CanFall
                                      & rng .~ newRng
 
-appEvent :: BrickEvent () Tick -> EventM () Game ()
+appEvent :: BrickEvent () CustomEvent -> EventM () St ()
+appEvent (AppEvent (AnimationUpdate act)) = act
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
 appEvent (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt
 appEvent (VtyEvent (V.EvKey key [])) = do
     case KeyConfig.getActionForKey KeyConfig.defaultConfig key of
-        Just action -> modify (apply action)
+        Just action -> modify (stGame %~ apply action)
         Nothing -> return ()
 appEvent (AppEvent Tick) = do
-    game <- get
-    let pieceInfo = debugPieceInfo (game ^. currentPiece)
+    st <- get
+    let game = st ^. stGame
+        pieceInfo = debugPieceInfo (game ^. currentPiece)
         finalGrid = getFinalGrid game
         gridString = debugGridToString finalGrid
         debugInfo = "=== TICK ===\n" ++ 
@@ -138,7 +153,7 @@ appEvent (AppEvent Tick) = do
                    "Slide State: " ++ show (game ^. slideState) ++ "\n" ++
                    "Grid:\n" ++ gridString ++ "\n"
     liftIO $ appendFile "tetrafall.log" debugInfo
-    modify step
+    modify (stGame %~ step)
     return ()
 
 appEvent _ = return ()
@@ -150,7 +165,7 @@ attributes :: AttrMap
 attributes =  attrMap (V.green `on` V.black) $
     map (\i -> (redAttr i, bg (V.rgbColor i 0 0))) [0..255]
 
-app :: App Game Tick ()
+app :: App St CustomEvent ()
 app =
     App { appDraw = \s -> [playfield s]
         , appHandleEvent = appEvent
@@ -164,10 +179,18 @@ main = do
     chan <- newBChan 10
     _ <- forkIO $ forever $ do
         writeBChan chan Tick
-        threadDelay 1000000 -- decides how fast your game moves
+        threadDelay 100000 -- decides how fast your game moves
     let buildVty = mkVty $ defaultConfig { configPreferredColorMode = Just FullColor }
     initialVty <- buildVty
-    void $ customMain initialVty buildVty (Just chan) app defaultGame
+    
+    mgr <- A.startAnimationManager 50 chan AnimationUpdate
+
+    let defaultState = St
+          { _stAnimationManager = mgr
+          , _stGame = defaultGame
+          }
+
+    void $ customMain initialVty buildVty (Just chan) app defaultState 
 
 defaultGame :: Game
 defaultGame = Game
@@ -177,3 +200,20 @@ defaultGame = Game
   , _slideState = CanFall
   , _rng = mkStdGen 42  -- Fixed seed for reproducible testing, could be randomized
   }
+
+drawClickAnimation :: St -> (Location, A.Animation St ()) -> Widget ()
+drawClickAnimation st (l, a) =
+    translateBy l $
+    A.renderAnimation (const $ str " ") st (Just a)
+
+clip1 :: A.Clip a ()
+clip1 =
+    A.newClip_
+    [ str "0"
+    , str "O"
+    , str "o"
+    , str "*"
+    , str "~"
+    , str "."
+    ]
+

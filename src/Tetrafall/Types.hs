@@ -8,7 +8,6 @@ module Tetrafall.Types
   , Grid
   , Game(..)
   , Tetromino(..)
-  , Tick(..)
   , Action(..)
   , SlideState(..)
   , apply
@@ -38,8 +37,6 @@ import System.Random (StdGen, randomR)
 
 import Tetrafall.Types.Coordinate
 import Tetrafall.Types.Grid
-
-data Tick = Tick
 
 data TetrominoType = S | Z | J | L | O | I | T
   deriving (Show, Enum, Eq, Ord)
