@@ -20,6 +20,7 @@ module Tetrafall.Types
   , slideState
   , rng
   , particles
+  , windowSize
   , tetrominoType
   , position
   , orientation
@@ -95,6 +96,7 @@ data Game = Game
   , _slideState :: SlideState
   , _rng :: StdGen
   , _particles :: [Particle]
+  , _windowSize :: (Int, Int)
   }
 
 data SlideState = 
@@ -126,4 +128,5 @@ defaultGame = Game
   , _slideState = CanFall
   , _rng = mkStdGen 42  -- Fixed seed for reproducible testing, could be randomized
   , _particles = mempty
+  , _windowSize = (0, 0)  -- Will be set during initialization
   }

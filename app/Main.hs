@@ -70,11 +70,13 @@ playfieldLayer st =
       game = st ^. stGame
       g = getFinalGrid game
       s = game ^. score
+      (w, h) = game ^. windowSize
+      sizeInfo = "Window: " ++ show w ++ "x" ++ show h
     in
     hCenterLayer $
     vCenterLayer $
     (border $
-    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> ( border $ hLimit 6 $ padLeft Max $ str (show s))
+    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> ( border $ hLimit 15 $ vBox [padLeft Max $ str (show s), padLeft Max $ str sizeInfo])
 
 
 
@@ -119,6 +121,8 @@ appEvent :: BrickEvent () CustomEvent -> EventM () St ()
 appEvent (AppEvent (AnimationUpdate act)) = act
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
 appEvent (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt
+appEvent (VtyEvent (V.EvResize width height)) = do
+    modify (stGame . windowSize .~ (width, height))
 appEvent (VtyEvent (V.EvKey key [])) = do
     case KeyConfig.getActionForKey KeyConfig.defaultConfig key of
         Just action -> modify (stGame %~ apply action)
@@ -173,11 +177,16 @@ main = do
     let buildVty = mkVty $ defaultConfig { configPreferredColorMode = Just FullColor }
     initialVty <- buildVty
     
+    -- Get initial window size
+    let output = V.outputIface initialVty
+    (width, height) <- V.displayBounds output
+    
     mgr <- A.startAnimationManager 50 chan AnimationUpdate
 
-    let defaultState = St
+    let gameWithWindowSize = defaultGame & windowSize .~ (width, height)
+        defaultState = St
           { _stAnimationManager = mgr
-          , _stGame = defaultGame
+          , _stGame = gameWithWindowSize
           , _particleAnimations = M.empty
           }
 
