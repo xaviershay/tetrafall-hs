@@ -71,12 +71,11 @@ playfieldLayer st =
       g = getFinalGrid game
       s = game ^. score
       (w, h) = game ^. windowSize
-      sizeInfo = "Window: " ++ show w ++ "x" ++ show h
     in
     hCenterLayer $
     vCenterLayer $
     (border $
-    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> ( border $ hLimit 15 $ vBox [padLeft Max $ str (show s), padLeft Max $ str sizeInfo])
+    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> ( border $ hLimit 15 $ vBox [padLeft Max $ str (show s)])
 
 
 
