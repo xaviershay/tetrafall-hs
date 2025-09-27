@@ -5,13 +5,18 @@ import Tetrafall.Types.Grid
 import Lens.Micro.Platform
 
 import qualified Data.HashMap.Strict as HashMap
-import Data.HashMap.Strict (HashMap, fromList)
 
-import System.Random (StdGen, randomR, mkStdGen)
+import System.Random (StdGen, randomR)
 
 step :: Game -> Game
 step game = 
-    let newGame = over score ((+) 1) game
+    let -- Clear existing particles and spawn new one at random location
+        (windowWidth, windowHeight) = game ^. windowSize
+        (randX, rng1) = randomR (0, windowWidth - 1) (game ^. rng)
+        (randY, rng2) = randomR (0, windowHeight - 1) rng1
+        newParticle = mkParticle & particleLocation .~ (fromIntegral randX, fromIntegral randY)
+        gameWithParticle = game & particles .~ [newParticle] & rng .~ rng2
+        newGame = over score ((+) 1) gameWithParticle
     in case newGame ^. currentPiece of
         Nothing -> newGame
         Just piece -> 

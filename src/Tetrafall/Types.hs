@@ -26,6 +26,7 @@ module Tetrafall.Types
   , orientation
   , defaultGame
   , particleLocation
+  , mkParticle
   , rotateCW
   , rotateCCW
   ) where
@@ -34,7 +35,7 @@ module Tetrafall.Types
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Hashable (Hashable(..))
 import Lens.Micro.Platform
-import System.Random (StdGen, randomR, mkStdGen)
+import System.Random (StdGen, mkStdGen)
 
 import Tetrafall.Types.Coordinate
 import Tetrafall.Types.Grid
@@ -78,6 +79,7 @@ data Particle = Particle
   }
 makeLenses ''Particle
 
+mkParticle :: Particle
 mkParticle = Particle { _particleLocation = (0.0, 0.0), _particleAge = 0 }
 
 data Action =
