@@ -162,6 +162,6 @@ defaultGame = Game
   , _slideState = CanFall
   , _rng = mkStdGen 42
   , _particles = mempty
-  , _windowSize = (0, 0)  -- Will be set during initialization
-  , _randomizerEnv = Tetrafall.Randomizer.og1985 (mkStdGen 24)
+  , _windowSize = (0, 0)
+  , _randomizerEnv = Tetrafall.Randomizer.tgm3 (mkStdGen 24)
   }
