@@ -1,4 +1,4 @@
-module Tetrafall.Randomizer (Randomizer, og1985, nes, tetrisWorlds) where
+module Tetrafall.Randomizer (Randomizer, og1985, nes, tetrisWorlds, tgm, tgm2, tgma, tgm3) where
 
 import Tetrafall.Types
 import System.Random (StdGen, randomR)
@@ -27,9 +27,11 @@ tgm rng = build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 
 tgm2 :: StdGen -> RandomizerEnv
 tgm2 rng = build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 6 (forbidRecent 4) uniform))
 
+-- TODO: Should use intiial history of s,z,s,z
 tgma :: StdGen -> RandomizerEnv
 tgma rng = build rng $ (retryForever forbidInitialOverhang (refillOnEmpty 7 bag))
 
+-- TODO: Should use intiial history of s,z,s,z
 tgm3 :: StdGen -> RandomizerEnv
 tgm3 rng = build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 6 (forbidRecent 4) (refillOnEmpty 35 (refillLongestUnseen bag))))
 
