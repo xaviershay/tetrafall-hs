@@ -11,6 +11,7 @@ module Tetrafall.Types
   , Action(..)
   , SlideState(..)
   , ScoreEvent(..)
+  , ScoringAlgorithm
   , Randomizer
   , RandomizerEnv(..)
   , defaultTetrominoMap
@@ -25,6 +26,7 @@ module Tetrafall.Types
   , rng
   , particles
   , windowSize
+  , gameScoreAlgorithm
   , tetrominoType
   , position
   , orientation
@@ -108,6 +110,14 @@ data Action =
   | ActionHardDrop
   deriving (Eq, Show)
 
+data ScoreEvent = ScoreEvent
+  { _scoreLines :: Int
+  , _scoreLevel :: Int
+  } deriving (Eq, Show)
+makeLenses ''ScoreEvent
+
+type ScoringAlgorithm = ScoreEvent -> Int
+
 data Game = Game
   { _grid :: Grid Cell
   , _currentPiece :: Maybe Tetromino
@@ -118,6 +128,7 @@ data Game = Game
   , _rng :: StdGen
   , _particles :: [Particle]
   , _windowSize :: (Int, Int)
+  , _gameScoreAlgorithm :: ScoringAlgorithm
   }
 
 data SlideState = 
@@ -125,12 +136,6 @@ data SlideState =
   | Sliding Coordinate  -- Piece cannot fall, tracking position for slide detection
   | ShouldLock  -- Piece should be locked immediately (e.g., after hard drop)
   deriving (Eq, Show)
-
-data ScoreEvent = ScoreEvent
-  { _scoreLines :: Int
-  , _scoreLevel :: Int
-  } deriving (Eq, Show)
-makeLenses ''ScoreEvent
 
 makeLenses ''Game
 

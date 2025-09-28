@@ -1,4 +1,4 @@
-module Tetrafall.Types.Grid (makeDense, makeSparse, makeSparseWithExtent, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, toDense, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise, clearLines, crop) where
+module Tetrafall.Types.Grid (makeDense, makeSparse, makeSparseWithExtent, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, toDense, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise, clearLines, clearLinesWithCount, crop) where
 
 import Tetrafall.Types.Coordinate
 
@@ -272,9 +272,9 @@ rotateCounterClockwise grid =
 isCompleteLine :: Eq a => a -> Vector a -> Bool
 isCompleteLine emptyValue row = V.all (/= emptyValue) row
 
--- Remove complete lines and shift cells down
-clearLines :: Eq a => Grid a -> Grid a
-clearLines grid = case (_cells grid) of
+-- Remove complete lines and shift cells down, returning both new grid and count of cleared lines
+clearLinesWithCount :: Eq a => Grid a -> (Grid a, Int)
+clearLinesWithCount grid = case (_cells grid) of
   Dense gridVector -> 
     let emptyValue = _emptyValue grid
         -- Find lines that are completely filled
@@ -289,9 +289,14 @@ clearLines grid = case (_cells grid) of
         emptyLines = V.replicate numClearedLines (V.replicate gridWidth emptyValue)
         -- Combine empty lines at top with remaining lines
         newGridVector = emptyLines V.++ remainingLines
-    in grid { _cells = Dense newGridVector }
+        newGrid = grid { _cells = Dense newGridVector }
+    in (newGrid, numClearedLines)
   
-  Sparse _ -> grid  -- For sparse grids, we don't support line clearing yet
+  Sparse _ -> (grid, 0)  -- For sparse grids, we don't support line clearing yet
+
+-- Remove complete lines and shift cells down
+clearLines :: Eq a => Grid a -> Grid a
+clearLines grid = fst (clearLinesWithCount grid)
 
 -- Crop a grid to a new extent, filling with empty element if extending beyond bounds
 crop :: Eq a => (Coordinate, Coordinate) -> Grid a -> Grid a

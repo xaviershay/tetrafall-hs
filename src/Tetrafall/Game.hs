@@ -3,6 +3,7 @@ module Tetrafall.Game (defaultGame, step, apply, getTetrominoGrid) where
 import Tetrafall.Types
 import Tetrafall.Types.Grid
 import qualified Tetrafall.Randomizer
+import qualified Tetrafall.Scoring
 import Lens.Micro.Platform
 
 import qualified Data.HashMap.Strict as HashMap
@@ -16,8 +17,7 @@ step game =
         (randX, rng1) = randomR (0, windowWidth - 1) (game ^. rng)
         (randY, rng2) = randomR (0, windowHeight - 1) rng1
         newParticle = mkParticle & particleLocation .~ (fromIntegral randX, fromIntegral randY)
-        gameWithParticle = game & particles .~ [newParticle] & rng .~ rng2
-        newGame = over score ((+) 1) gameWithParticle
+        newGame = game & particles .~ [newParticle] & rng .~ rng2
     in case newGame ^. currentPiece of
         Nothing -> 
             case newGame ^. gameNextPieces of
@@ -50,19 +50,23 @@ step game =
                            then -- Piece hasn't moved, lock it down
                                let currentPieceGrid = getTetrominoGrid piece
                                    gridWithPiece = baseGrid `overlay` currentPieceGrid
-                                   newGrid = clearLines gridWithPiece
+                                   (newGrid, linesCleared) = clearLinesWithCount gridWithPiece
+                                   scorePoints = calculateScore newGame linesCleared
                                in newGame & grid .~ newGrid 
                                          & currentPiece .~ Nothing
                                          & slideState .~ CanFall
+                                         & score %~ (+ scorePoints)
                            else -- Piece has moved, continue sliding with new position
                                newGame & slideState .~ Sliding (piece ^. position)
                        ShouldLock -> 
                            let currentPieceGrid = getTetrominoGrid piece
                                gridWithPiece = baseGrid `overlay` currentPieceGrid
-                               newGrid = clearLines gridWithPiece
+                               (newGrid, linesCleared) = clearLinesWithCount gridWithPiece
+                               scorePoints = calculateScore newGame linesCleared
                            in newGame & grid .~ newGrid 
                                      & currentPiece .~ Nothing
                                      & slideState .~ CanFall
+                                     & score %~ (+ scorePoints)
 
 apply :: Action -> Game -> Game
 apply ActionLeft game = 
@@ -155,6 +159,16 @@ getTetrominoGrid piece =
 
 
 
+-- Calculate score based on lines cleared using the configured algorithm
+calculateScore :: Game -> Int -> Int
+calculateScore game linesCleared
+  | linesCleared <= 0 = 0
+  | otherwise = 
+      let algorithm = game ^. gameScoreAlgorithm
+          level = 1  -- TODO: Add proper level calculation
+          scoreEvent = ScoreEvent linesCleared level
+      in algorithm scoreEvent
+
 -- Helper function to reset slide state when piece moves
 resetSlideState :: Game -> Game
 resetSlideState = slideState .~ CanFall
@@ -174,4 +188,5 @@ defaultGame =
     , _particles = mempty
     , _windowSize = (0, 0)
     , _randomizerEnv = updatedRandomizerEnv
+    , _gameScoreAlgorithm = Tetrafall.Scoring.simple
     }
