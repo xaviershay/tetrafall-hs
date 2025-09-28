@@ -1,9 +1,9 @@
-module Tetrafall.Scoring (calculateScore) where
+module Tetrafall.Scoring (simple) where
 
 import Tetrafall.Types
 
-calculateScore :: ScoreEvent -> Int
-calculateScore scoreEvent = 
+simple :: ScoreEvent -> Int
+simple scoreEvent = 
   let linesCleared = _scoreLines scoreEvent
       level = _scoreLevel scoreEvent
   in case linesCleared of
