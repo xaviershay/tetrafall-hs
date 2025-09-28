@@ -1,15 +1,24 @@
-module Tetrafall.Randomizer (Randomizer, og1985, nes) where
+module Tetrafall.Randomizer (Randomizer, og1985, nes, tetrisWorlds) where
 
 import Tetrafall.Types
 import System.Random (StdGen, randomR)
 
-build rng f = RandomizerEnv rng [] 0 [] f
+type Predicate = RandomizerEnv -> TetrominoType -> Bool
+
+build :: StdGen -> Randomizer -> RandomizerEnv
+build rng f = RandomizerEnv rng [] 0 [] f 0
 
 og1985 :: StdGen -> RandomizerEnv
 og1985 rng = build rng uniform
 
 nes :: StdGen -> RandomizerEnv
 nes rng = build rng $ withHistory 1 (retryN 1 (forbidRecent 1) uniform)
+
+tetrisWorlds :: StdGen -> RandomizerEnv
+tetrisWorlds rng = build rng $ withRefillOnEmpty 7 bag
+
+tgm :: StdGen -> RandomizerEnv
+tgm rng = build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 4 (forbidRecent 4) uniform))
 
 uniform :: Randomizer
 uniform env = 
@@ -18,13 +27,55 @@ uniform env =
       selectedType = allTypes !! index
   in (selectedType, env { _randomizerEnvRng = newGen })
 
+bag :: Randomizer
+bag env = 
+  case _randomizerBag env of
+    [] -> error "Bag is empty - should be refilled before calling bag"
+    bagPieces -> 
+      let (index, newGen) = randomR (0, length bagPieces - 1) (_randomizerEnvRng env)
+          selectedPiece = bagPieces !! index
+          remainingBag = take index bagPieces ++ drop (index + 1) bagPieces
+      in (selectedPiece, env { _randomizerEnvRng = newGen, _randomizerBag = remainingBag })
+
+-- Place the selected piece back in the bag
+withRefillOnSelect :: Randomizer -> Randomizer
+withRefillOnSelect baseRandomizer env =
+  let (selectedType, newEnv) = baseRandomizer env
+      updatedBag = selectedType : _randomizerBag newEnv
+  in (selectedType, newEnv { _randomizerBag = updatedBag })
+
+withRefillOnEmpty :: Int -> Randomizer -> Randomizer
+withRefillOnEmpty n baseRandomizer env =
+  let refillBag = take n $ cycle [S, Z, J, L, O, I, T]
+      
+      newEnv = if null (_randomizerBag env)
+               then env { _randomizerBag = refillBag }
+               else env
+  in baseRandomizer newEnv
+
 -- Select a piece from the randomizer, then return it as well as adding it to
 -- the environment's history. Only keeps N recent pieces.
 withHistory :: Int -> Randomizer -> Randomizer
-withHistory = undefined
+withHistory n baseRandomizer env =
+  let (selectedType, newEnv) = baseRandomizer env
+      updatedHistory = take n (selectedType : _randomizerEnvHistory newEnv)
+      incrementedCount = _randomizerCount newEnv + 1
+  in (selectedType, newEnv { _randomizerEnvHistory = updatedHistory, _randomizerCount = incrementedCount })
+
+-- AND conjuction of predicates
+andPredicate :: Predicate -> Predicate -> Predicate
+andPredicate pred1 pred2 env tetrominoType = pred1 env tetrominoType && pred2 env tetrominoType
+
+-- If this is the first piece (count == 0), forbid if the given type.
+forbidInitial :: TetrominoType -> Predicate
+forbidInitial forbiddenType env tetrominoType = 
+  _randomizerCount env /= 0 || tetrominoType /= forbiddenType
+
+forbidInitialOverhang :: Predicate
+forbidInitialOverhang = forbidInitial I `andPredicate` forbidInitial S `andPredicate` forbidInitial Z
 
 -- take n from history and return true if none of them match the given type
-forbidRecent :: Int -> (RandomizerEnv -> TetrominoType -> Bool)
+forbidRecent :: Int -> Predicate
 forbidRecent n env tetrominoType = 
   let recentPieces = take n (_randomizerEnvHistory env)
   in tetrominoType `notElem` recentPieces
@@ -32,7 +83,7 @@ forbidRecent n env tetrominoType =
 -- Select from the underlying randomizer up to N times, retrying if the selected
 -- type does not cause the provided function to return True. After N
 -- unsuccessful tries, default to the underlying randomizer with no checking.
-retryN :: Int -> (RandomizerEnv -> TetrominoType -> Bool) -> Randomizer -> Randomizer
+retryN :: Int -> Predicate -> Randomizer -> Randomizer
 retryN maxTries validator baseRandomizer env = 
   let tryGenerate tries currentEnv
         | tries >= maxTries = baseRandomizer currentEnv
@@ -42,3 +93,11 @@ retryN maxTries validator baseRandomizer env =
                then (tetrominoType, newEnv)
                else tryGenerate (tries + 1) newEnv
   in tryGenerate 0 env
+
+-- Select from randomizer repeatedly until predicate passes
+retryForever :: Predicate -> Randomizer -> Randomizer
+retryForever validator baseRandomizer env = 
+  let (tetrominoType, newEnv) = baseRandomizer env
+  in if validator env tetrominoType
+     then (tetrominoType, newEnv)
+     else retryForever validator baseRandomizer newEnv
