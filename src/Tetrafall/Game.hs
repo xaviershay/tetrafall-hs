@@ -150,7 +150,7 @@ getTetrominoGrid piece =
         South -> rotateClockwise (rotateClockwise shapeGrid)
         West -> rotateCounterClockwise shapeGrid
       (dx, dy) = piece ^. position
-      translatedCells = map (\((x, y), cell) -> ((x + dx, y + dy), cell)) (toSparse rotatedGrid)
+      translatedCells = map (\((x, y), cell) -> ((x + dx, y + dy), cell)) (toList rotatedGrid)
   in makeSparse Empty translatedCells
 
 

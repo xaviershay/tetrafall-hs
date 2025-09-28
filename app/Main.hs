@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toSparse, double, makeDense, makeSparse, crop, dimensions)
+import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toSparse, toList, double, makeDense, makeSparse, crop, dimensions)
 import Tetrafall.Game (step, apply, getTetrominoGrid, defaultGame)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
@@ -139,7 +139,7 @@ debugPieceInfo :: Maybe Tetromino -> String
 debugPieceInfo Nothing = "No current piece"
 debugPieceInfo (Just piece) = 
     let pieceGrid = getTetrominoGrid piece
-        gridCoords = map fst (toSparse pieceGrid)
+        gridCoords = map fst (toList pieceGrid)
     in "Piece: " ++ show (piece ^. tetrominoType) ++ 
        " at " ++ show (piece ^. position) ++ 
        " facing " ++ show (piece ^. orientation) ++

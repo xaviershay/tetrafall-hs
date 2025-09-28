@@ -1,10 +1,10 @@
-module Tetrafall.Types.Grid (makeDense, makeSparse, makeSparseWithExtent, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise, clearLines, crop) where
+module Tetrafall.Types.Grid (makeDense, makeSparse, makeSparseWithExtent, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, toDense, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise, clearLines, crop) where
 
 import Tetrafall.Types.Coordinate
 
 import qualified Data.Vector as V
 import Data.Vector (Vector)
-import Data.List (sortBy, foldl')
+import Data.List (sortBy)
 import Data.Function (on)
 
 data CellData a = 
@@ -178,26 +178,32 @@ setAt (x, y) cell grid = case (_cells grid) of
 emptyGrid :: a -> Grid a
 emptyGrid empty = Grid ((0, 0), (-1, -1)) (Dense V.empty) empty
 
-toSparse :: Eq a => Grid a -> [(Coordinate, a)]
+toSparse :: Eq a => Grid a -> Grid a
 toSparse grid = case (_cells grid) of
-  Sparse xs -> xs
-  Dense _ -> filter ((/= _emptyValue grid) . snd) (toList grid)
+  Sparse _ -> grid  -- Already sparse, return as is
+  Dense _ -> 
+    let sparseCoords = filter ((/= _emptyValue grid) . snd) (toList grid)
+    in makeSparseWithExtent (_emptyValue grid) (_extent grid) sparseCoords
 
-toDense :: Eq a => a -> (Coordinate, Coordinate) -> [(Coordinate, a)] -> Grid a
-toDense emptyVal newExtent@((minX, minY), (maxX, maxY)) sparseCells =
-  let width = maxX - minX + 1
-      height = maxY - minY + 1
-      -- Create an empty dense grid
-      emptyDenseGrid = makeDense (width, height) emptyVal
-      adjustedEmptyGrid = emptyDenseGrid { _extent = newExtent }
-      -- Create a sparse grid with the cells and overlay it
-      sparseGrid = makeSparseWithExtent emptyVal newExtent sparseCells
-  in overlay adjustedEmptyGrid sparseGrid
+toDense :: Eq a => Grid a -> Grid a
+toDense grid = case (_cells grid) of
+  Dense _ -> grid  -- Already dense, return as is
+  Sparse sparseCells -> 
+    let emptyVal = _emptyValue grid
+        gridExtent@((minX, minY), (maxX, maxY)) = _extent grid
+        width = maxX - minX + 1
+        height = maxY - minY + 1
+        -- Create an empty dense grid
+        emptyDenseGrid = makeDense (width, height) emptyVal
+        adjustedEmptyGrid = emptyDenseGrid { _extent = gridExtent }
+        -- Create a sparse grid with the cells and overlay it
+        sparseGrid = makeSparseWithExtent emptyVal gridExtent sparseCells
+    in overlay adjustedEmptyGrid sparseGrid
 
 overlap :: Eq a => Grid a -> Grid a -> Bool
 overlap grid1 grid2 = 
-  let sparse1 = toSparse grid1
-      sparse2 = toSparse grid2
+  let sparse1 = toList (toSparse grid1)
+      sparse2 = toList (toSparse grid2)
       coords1 = map fst sparse1
       coords2 = map fst sparse2
   in any (`elem` coords2) coords1
@@ -290,7 +296,7 @@ clearLines grid = case (_cells grid) of
 -- Crop a grid to a new extent, filling with empty element if extending beyond bounds
 crop :: Eq a => (Coordinate, Coordinate) -> Grid a -> Grid a
 crop newExtent@((newMinX, newMinY), (newMaxX, newMaxY)) grid = 
-  let originalSparse = toSparse grid
+  let originalSparse = toList grid
       emptyVal = _emptyValue grid
       
       -- Filter sparse cells to only those within the new extent bounds
@@ -298,7 +304,9 @@ crop newExtent@((newMinX, newMinY), (newMaxX, newMaxY)) grid =
                        x >= newMinX && x <= newMaxX && y >= newMinY && y <= newMaxY]
       
   in case (_cells grid) of
-      Dense _ -> toDense emptyVal newExtent filteredCells
+      Dense _ -> 
+        let sparseGrid = makeSparseWithExtent emptyVal newExtent filteredCells
+        in toDense sparseGrid
       Sparse _ -> 
         let finalExtent = if null filteredCells 
                          then ((0, 0), (-1, -1))

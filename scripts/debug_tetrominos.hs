@@ -18,7 +18,7 @@ formatCellForDebug Garbage = '#'
 
 visualizeGrid :: Grid Cell -> String
 visualizeGrid grid =
-    let coords = toSparse grid
+    let coords = toList grid
         ((minX, minY), (maxX, maxY)) = extent grid
         
         coordMap = HashMap.fromList coords
@@ -47,7 +47,7 @@ debugTetromino pieceType = do
             mapM_ (\orientation -> do
                 putStrLn $ show orientation ++ ":"
                 let rotatedGrid = getRotatedGrid baseGrid orientation
-                    coords = filter (\(_, cell) -> cell /= Empty) (toSparse rotatedGrid)
+                    coords = filter (\(_, cell) -> cell /= Empty) (toList rotatedGrid)
                 putStr $ visualizeGrid rotatedGrid
                 putStrLn ""
                 ) orientations
