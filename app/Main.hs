@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toSparse, double)
+import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toSparse, double, makeDense)
 import Tetrafall.Game (step, apply, getTetrominoGrid, defaultGame)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
@@ -15,7 +15,7 @@ import Lens.Micro.Platform
 
 import Brick
 import Brick.BChan (newBChan, writeBChan)
-import Brick.Widgets.Border (border)
+import Brick.Widgets.Border (border, borderWithLabel)
 import Brick.Widgets.Center (hCenter, hCenterLayer, vCenter, vCenterLayer)
 
 import qualified Brick.Animation as A
@@ -56,26 +56,48 @@ getFinalGrid game =
           return (getTetrominoGrid piece)
     in baseGrid `overlay` pieceGrid
 
--- Create individual layers for each particle (one layer per particle)
+renderNextPiece :: Game -> Widget ()
+renderNextPiece game =
+    case game ^. gameNextPieces of
+        [] -> withDefAttr borderAttr $ border $ hLimit 8 $ vLimit 2 $ fill ' '
+        (nextType:_) -> 
+            let nextPiece = Tetromino nextType (1, 1) North
+                nextGrid = getTetrominoGrid nextPiece
+                previewGrid = makeDense (4, 2) Empty
+                finalPreviewGrid = double $ (previewGrid `overlay` nextGrid)
+                previewWidget = vBox $ V.toList $ V.map (\row -> 
+                    hBox $ V.toList $ V.map formatCell row
+                    ) (toVector finalPreviewGrid)
+            in withDefAttr borderAttr $ borderWithLabel (str "Next") $ hLimit 8 $ vLimit 2 $ 
+               vCenter $ hCenter $ previewWidget
+
 drawParticleLayerList :: St -> [Widget ()]
 drawParticleLayerList st = map (drawParticleAnimation st) (M.toList (st ^. particleAnimations))
 
 backgroundLayer :: St -> Widget ()
-backgroundLayer st = hCenter $ vCenter $ str " "
+backgroundLayer _ = hCenter $ vCenter $ str " "
 
--- Foreground layer with the playfield and score
 playfieldLayer :: St -> Widget ()
 playfieldLayer st =
     let
       game = st ^. stGame
       g = getFinalGrid game
       s = game ^. score
-      (w, h) = game ^. windowSize
+      
+      -- Main playfield
+      playfield = withDefAttr borderAttr $ border $
+                  foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))
+      
+      -- Right sidebar with next piece and score
+      sidebar = vBox 
+                [ renderNextPiece game
+                , withDefAttr borderAttr $ borderWithLabel (str "Score") $ 
+                  hLimit 8 $ padLeft Max $ withDefAttr scoringTextAttr $ str (show s)
+                ]
     in
     hCenterLayer $
     vCenterLayer $
-    (withDefAttr borderAttr $ border $
-    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> (withDefAttr borderAttr $ border $ hLimit 15 $ vBox [padLeft Max $ withDefAttr scoringTextAttr $ str (show s)])
+    playfield <+> str " " <+> sidebar
 
 
 
@@ -194,20 +216,23 @@ redAttr :: Int -> AttrName
 redAttr i = attrName ("red-" <> show i)
 
 attributes :: AttrMap
-attributes = attrMap (V.white `on` V.rgbColor 0 0 0) $
-    [ (backgroundAttr, bg (V.rgbColor 0 0 0))
+attributes = attrMap (V.white `on` rgb 0 0 0) $
+    [ (backgroundAttr, bg (rgb 0 0 0))
     , (particleAttr, fg V.white)
-    , (borderAttr, fg (V.rgbColor 180 180 180))  -- dull white
+    , (borderAttr, fg (rgb 180 180 180))  -- dull white
     , (scoringTextAttr, fg V.white)
     -- Tetromino colors
-    , (sBlockAttr, fg (V.rgbColor 0 153 0))      -- S: RGB(0,153,0)
-    , (zBlockAttr, fg (V.rgbColor 204 0 0))      -- Z: RGB(204,0,0)
-    , (iBlockAttr, fg (V.rgbColor 0 255 204))    -- I: RGB(0,255,204)
-    , (oBlockAttr, fg (V.rgbColor 255 204 0))    -- O: RGB(255,204,0)
-    , (lBlockAttr, fg (V.rgbColor 255 102 51))   -- L: RGB(255,102,51)
-    , (jBlockAttr, fg (V.rgbColor 51 0 255))     -- J: RGB(51,0,255)
-    , (tBlockAttr, fg (V.rgbColor 204 0 204))    -- T: RGB(204,0,204)
-    ] ++ map (\i -> (redAttr i, bg (V.rgbColor i 0 0))) [0..255]
+    , (sBlockAttr, fg (rgb 0 153 0))
+    , (zBlockAttr, fg (rgb 204 0 0))
+    , (iBlockAttr, fg (rgb 0 255 204))
+    , (oBlockAttr, fg (rgb 255 204 0))
+    , (lBlockAttr, fg (rgb 255 102 51))
+    , (jBlockAttr, fg (rgb 51 0 255))
+    , (tBlockAttr, fg (rgb 204 0 204))
+    ] ++ map (\i -> (redAttr i, bg (rgb i 0 0))) [0..255]
+    where
+        rgb :: Int -> Int -> Int -> V.Color
+        rgb = V.rgbColor
 
 app :: App St CustomEvent ()
 app =

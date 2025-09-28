@@ -20,12 +20,17 @@ step game =
         newGame = over score ((+) 1) gameWithParticle
     in case newGame ^. currentPiece of
         Nothing -> 
-            let currentRandomizerEnv = newGame ^. randomizerEnv
-                randomizerFunc = _randomizerSelection currentRandomizerEnv
-                (tetrominoType, newRandomizerEnv) = randomizerFunc currentRandomizerEnv
-                newPiece = Tetromino tetrominoType (4, 1) North
-            in newGame & currentPiece .~ Just newPiece 
-                       & randomizerEnv .~ newRandomizerEnv
+            case newGame ^. gameNextPieces of
+                [] -> error "No next pieces available - should never happen"
+                (nextPieceType:remainingPieces) ->
+                    let currentRandomizerEnv = newGame ^. randomizerEnv
+                        randomizerFunc = _randomizerSelection currentRandomizerEnv
+                        (newNextPiece, newRandomizerEnv) = randomizerFunc currentRandomizerEnv
+                        newPiece = Tetromino nextPieceType (4, 1) North
+                        updatedNextPieces = remainingPieces ++ [newNextPiece]
+                    in newGame & currentPiece .~ Just newPiece 
+                               & gameNextPieces .~ updatedNextPieces
+                               & randomizerEnv .~ newRandomizerEnv
         Just piece -> 
             let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
                 movedPieceGrid = getTetrominoGrid movedPiece
@@ -155,13 +160,18 @@ resetSlideState :: Game -> Game
 resetSlideState = slideState .~ CanFall
 
 defaultGame :: Game
-defaultGame = Game
-  { _grid =  makeDense (10, 22) Empty
-  , _score = 0
-  , _currentPiece = Nothing
-  , _slideState = CanFall
-  , _rng = mkStdGen 42
-  , _particles = mempty
-  , _windowSize = (0, 0)
-  , _randomizerEnv = Tetrafall.Randomizer.tgm3 (mkStdGen 24)
-  }
+defaultGame = 
+  let initialRandomizerEnv = Tetrafall.Randomizer.tgm3 (mkStdGen 24)
+      randomizerFunc = _randomizerSelection initialRandomizerEnv
+      (nextPiece, updatedRandomizerEnv) = randomizerFunc initialRandomizerEnv
+  in Game
+    { _grid =  makeDense (10, 22) Empty
+    , _score = 0
+    , _currentPiece = Nothing
+    , _gameNextPieces = [nextPiece]
+    , _slideState = CanFall
+    , _rng = mkStdGen 42
+    , _particles = mempty
+    , _windowSize = (0, 0)
+    , _randomizerEnv = updatedRandomizerEnv
+    }

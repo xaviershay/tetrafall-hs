@@ -31,7 +31,39 @@ defaultTestGame = defaultGame
   }
 gameTests :: TestTree
 gameTests = testGroup "Game Tests"
-  [ testGroup "Action apply function"
+  [ testGroup "Next pieces functionality"
+    [ testCase "defaultGame initializes with one next piece" $ do
+        let game = defaultGame
+        length (_gameNextPieces game) @?= 1
+        
+    , testCase "step function uses next piece as current when no current piece" $ do
+        let game = defaultGame & currentPiece .~ Nothing
+        let originalNextPieces = _gameNextPieces game
+        let gameAfterStep = step game
+        
+        -- Should have a current piece now
+        case _currentPiece gameAfterStep of
+          Nothing -> assertFailure "Expected current piece after step"
+          Just piece -> do
+            -- The current piece should be the first from the next pieces list
+            case originalNextPieces of
+              [] -> assertFailure "Expected next pieces to not be empty"
+              (expectedType:_) -> _tetrominoType piece @?= expectedType
+        
+        -- Should have added a new piece to the back of next pieces list
+        length (_gameNextPieces gameAfterStep) @?= length originalNextPieces
+        
+    , testCase "step function adds new piece to back when popping from front" $ do
+        let game = defaultGame & currentPiece .~ Nothing
+        let originalNextPieces = _gameNextPieces game
+        let gameAfterStep = step game
+        let newNextPieces = _gameNextPieces gameAfterStep
+        
+        case (originalNextPieces, newNextPieces) of
+          ([_], [_]) -> return ()
+          _ -> assertFailure "Expected exactly one piece in next pieces list"
+    ]
+  , testGroup "Action apply function"
     [ testCase "ActionLeft moves piece left when valid" $ do
         let testGame = defaultTestGame
         let originalPos = case _currentPiece testGame of 

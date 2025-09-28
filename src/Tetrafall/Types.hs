@@ -19,6 +19,7 @@ module Tetrafall.Types
   , grid
   , score
   , currentPiece
+  , gameNextPieces
   , slideState
   , rng
   , particles
@@ -107,6 +108,7 @@ data Action =
 data Game = Game
   { _grid :: Grid Cell
   , _currentPiece :: Maybe Tetromino
+  , _gameNextPieces :: [TetrominoType]
   , _score :: Int
   , _slideState :: SlideState
   , _randomizerEnv :: RandomizerEnv
