@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, overlap, isWithinBounds, emptyGrid, overlay, clearLines, toSparse, double)
+import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toSparse, double)
 import Tetrafall.Game (step, apply, getTetrominoGrid)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
@@ -74,18 +74,25 @@ playfieldLayer st =
     in
     hCenterLayer $
     vCenterLayer $
-    (border $
-    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> ( border $ hLimit 15 $ vBox [padLeft Max $ str (show s)])
+    (withDefAttr borderAttr $ border $
+    foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))) <+> (withDefAttr borderAttr $ border $ hLimit 15 $ vBox [padLeft Max $ withDefAttr scoringTextAttr $ str (show s)])
 
 
 
 drawParticleAnimation :: St -> (Location, A.Animation St ()) -> Widget ()
 drawParticleAnimation st (location, animation) =
-    translateBy location $ A.renderAnimation (const $ str "*") st (Just animation)
+    translateBy location $ A.renderAnimation (const $ withDefAttr particleAttr $ str "*") st (Just animation)
 
 formatCell :: Cell -> Widget ()
 formatCell Empty = str " "
-formatCell _ = str "█"
+formatCell (TetrominoCell S) = withDefAttr sBlockAttr $ str "█"
+formatCell (TetrominoCell Z) = withDefAttr zBlockAttr $ str "█"
+formatCell (TetrominoCell I) = withDefAttr iBlockAttr $ str "█"
+formatCell (TetrominoCell O) = withDefAttr oBlockAttr $ str "█"
+formatCell (TetrominoCell L) = withDefAttr lBlockAttr $ str "█"
+formatCell (TetrominoCell J) = withDefAttr jBlockAttr $ str "█"
+formatCell (TetrominoCell T) = withDefAttr tBlockAttr $ str "█"
+formatCell Garbage = str "█"
 
 -- Debug functions for logging
 formatCellForDebug :: Cell -> Char
@@ -148,12 +155,59 @@ appEvent (AppEvent Tick) = do
 
 appEvent _ = return ()
 
+-- Color attribute names
+backgroundAttr :: AttrName
+backgroundAttr = attrName "background"
+
+particleAttr :: AttrName
+particleAttr = attrName "particle"
+
+borderAttr :: AttrName
+borderAttr = attrName "border"
+
+scoringTextAttr :: AttrName
+scoringTextAttr = attrName "scoring-text"
+
+-- Tetromino color attributes
+sBlockAttr :: AttrName
+sBlockAttr = attrName "s-block"
+
+zBlockAttr :: AttrName
+zBlockAttr = attrName "z-block"
+
+iBlockAttr :: AttrName
+iBlockAttr = attrName "i-block"
+
+oBlockAttr :: AttrName
+oBlockAttr = attrName "o-block"
+
+lBlockAttr :: AttrName
+lBlockAttr = attrName "l-block"
+
+jBlockAttr :: AttrName
+jBlockAttr = attrName "j-block"
+
+tBlockAttr :: AttrName
+tBlockAttr = attrName "t-block"
+
 redAttr :: Int -> AttrName
 redAttr i = attrName ("red-" <> show i)
 
 attributes :: AttrMap
-attributes =  attrMap (V.green `on` V.black) $
-    map (\i -> (redAttr i, bg (V.rgbColor i 0 0))) [0..255]
+attributes = attrMap (V.white `on` V.black) $
+    [ (backgroundAttr, bg V.black)
+    , (particleAttr, fg V.white)
+    , (borderAttr, fg (V.rgbColor 180 180 180))  -- dull white
+    , (scoringTextAttr, fg V.white)
+    -- Tetromino colors
+    , (sBlockAttr, fg (V.rgbColor 0 255 0))      -- green
+    , (zBlockAttr, fg (V.rgbColor 255 0 0))      -- red
+    , (iBlockAttr, fg (V.rgbColor 173 216 230))  -- light blue
+    , (oBlockAttr, fg (V.rgbColor 255 255 0))    -- yellow
+    , (lBlockAttr, fg (V.rgbColor 255 165 0))    -- orange
+    , (jBlockAttr, fg (V.rgbColor 0 0 255))      -- blue
+    , (tBlockAttr, fg (V.rgbColor 128 0 128))    -- purple
+    ] ++ map (\i -> (redAttr i, bg (V.rgbColor i 0 0))) [0..255]
 
 app :: App St CustomEvent ()
 app =
@@ -194,11 +248,11 @@ main = do
 clip1 :: A.Clip a ()
 clip1 =
     A.newClip_
-    [ str "0"
-    , str "O"
-    , str "o"
-    , str "*"
-    , str "~"
-    , str "."
+    [ withDefAttr particleAttr $ str "0"
+    , withDefAttr particleAttr $ str "O"
+    , withDefAttr particleAttr $ str "o"
+    , withDefAttr particleAttr $ str "*"
+    , withDefAttr particleAttr $ str "~"
+    , withDefAttr particleAttr $ str "."
     ]
 
