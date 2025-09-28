@@ -60,6 +60,7 @@ data RandomizerEnv = RandomizerEnv
   , _randomizerBag :: [TetrominoType]
   , _randomizerSelection :: Randomizer
   , _randomizerCount :: Int
+  , _randomizerSinceLast :: HashMap TetrominoType Int
   }
 makeLenses ''RandomizerEnv
 
