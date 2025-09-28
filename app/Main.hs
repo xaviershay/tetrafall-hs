@@ -200,13 +200,13 @@ attributes = attrMap (V.white `on` V.black) $
     , (borderAttr, fg (V.rgbColor 180 180 180))  -- dull white
     , (scoringTextAttr, fg V.white)
     -- Tetromino colors
-    , (sBlockAttr, fg (V.rgbColor 0 255 0))      -- green
-    , (zBlockAttr, fg (V.rgbColor 255 0 0))      -- red
-    , (iBlockAttr, fg (V.rgbColor 173 216 230))  -- light blue
-    , (oBlockAttr, fg (V.rgbColor 255 255 0))    -- yellow
-    , (lBlockAttr, fg (V.rgbColor 255 165 0))    -- orange
-    , (jBlockAttr, fg (V.rgbColor 0 0 255))      -- blue
-    , (tBlockAttr, fg (V.rgbColor 128 0 128))    -- purple
+    , (sBlockAttr, fg (V.rgbColor 0 153 0))      -- S: RGB(0,153,0)
+    , (zBlockAttr, fg (V.rgbColor 204 0 0))      -- Z: RGB(204,0,0)
+    , (iBlockAttr, fg (V.rgbColor 0 255 204))    -- I: RGB(0,255,204)
+    , (oBlockAttr, fg (V.rgbColor 255 204 0))    -- O: RGB(255,204,0)
+    , (lBlockAttr, fg (V.rgbColor 255 102 51))   -- L: RGB(255,102,51)
+    , (jBlockAttr, fg (V.rgbColor 51 0 255))     -- J: RGB(51,0,255)
+    , (tBlockAttr, fg (V.rgbColor 204 0 204))    -- T: RGB(204,0,204)
     ] ++ map (\i -> (redAttr i, bg (V.rgbColor i 0 0))) [0..255]
 
 app :: App St CustomEvent ()
