@@ -19,21 +19,20 @@ nes rng = build rng $ withHistory 1 (retryN 1 (forbidRecent 1) uniform)
 tetrisWorlds :: StdGen -> RandomizerEnv
 tetrisWorlds rng = build rng $ refillOnEmpty 7 bag
 
--- TODO: Should use intiial history of z,z,z,z
 tgm :: StdGen -> RandomizerEnv
-tgm rng = build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 4 (forbidRecent 4) uniform))
+tgm rng = initialHistory [Z, Z, Z, Z] $ build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 4 (forbidRecent 4) uniform))
 
--- TODO: Should use intiial history of s,z,s,z
 tgm2 :: StdGen -> RandomizerEnv
-tgm2 rng = build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 6 (forbidRecent 4) uniform))
+tgm2 rng = initialHistory [S, Z, S, Z] $ build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 6 (forbidRecent 4) uniform))
 
--- TODO: Should use intiial history of s,z,s,z
 tgma :: StdGen -> RandomizerEnv
-tgma rng = build rng $ (retryForever forbidInitialOverhang (refillOnEmpty 7 bag))
+tgma rng = initialHistory [S, Z, S, Z] $ build rng $ (retryForever forbidInitialOverhang (refillOnEmpty 7 bag))
 
--- TODO: Should use intiial history of s,z,s,z
 tgm3 :: StdGen -> RandomizerEnv
-tgm3 rng = build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 6 (forbidRecent 4) (refillOnEmpty 35 (refillLongestUnseen bag))))
+tgm3 rng = initialHistory [S, Z, S, Z] $ build rng $ withHistory 4 (retryForever forbidInitialOverhang (retryN 6 (forbidRecent 4) (refillOnEmpty 35 (refillLongestUnseen bag))))
+
+initialHistory :: [TetrominoType] -> RandomizerEnv -> RandomizerEnv
+initialHistory history env = env { _randomizerEnvHistory = history }
 
 uniform :: Randomizer
 uniform env = 
