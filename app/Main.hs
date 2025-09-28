@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toSparse, double, makeDense)
+import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toSparse, double, makeDense, makeSparse, crop, dimensions)
 import Tetrafall.Game (step, apply, getTetrominoGrid, defaultGame)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
@@ -59,16 +59,16 @@ getFinalGrid game =
 renderNextPiece :: Game -> Widget ()
 renderNextPiece game =
     case game ^. gameNextPieces of
-        [] -> withDefAttr borderAttr $ border $ hLimit 8 $ vLimit 2 $ fill ' '
+        [] -> withDefAttr borderAttr $ border $ hLimit 10 $ vLimit 2 $ fill ' '
         (nextType:_) -> 
-            let nextPiece = Tetromino nextType (1, 1) North
+            let nextPiece = Tetromino nextType (2, 1) North
                 nextGrid = getTetrominoGrid nextPiece
-                previewGrid = makeDense (4, 2) Empty
-                finalPreviewGrid = double $ (previewGrid `overlay` nextGrid)
+                previewGrid = double $ makeDense (5, 2) Empty `overlay` nextGrid
+                finalPreviewGrid = if ((fst . dimensions) nextGrid `mod` 2 == 0) then crop ((1, 0), (9, 1)) previewGrid else previewGrid
                 previewWidget = vBox $ V.toList $ V.map (\row -> 
                     hBox $ V.toList $ V.map formatCell row
                     ) (toVector finalPreviewGrid)
-            in withDefAttr borderAttr $ borderWithLabel (str "Next") $ hLimit 8 $ vLimit 2 $ 
+            in withDefAttr borderAttr $ borderWithLabel (str "Next") $ hLimit 10 $ vLimit 2 $ 
                vCenter $ hCenter $ previewWidget
 
 drawParticleLayerList :: St -> [Widget ()]
@@ -92,7 +92,7 @@ playfieldLayer st =
       sidebar = vBox 
                 [ renderNextPiece game
                 , withDefAttr borderAttr $ borderWithLabel (str "Score") $ 
-                  hLimit 8 $ padLeft Max $ withDefAttr scoringTextAttr $ str (show s)
+                  hLimit 10 $ padLeft Max $ withDefAttr scoringTextAttr $ str (show s)
                 ]
     in
     hCenterLayer $

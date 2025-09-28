@@ -49,7 +49,6 @@ toVector :: Grid a -> Vector (Vector a)
 toVector g = case (_cells g) of
   Sparse _ -> undefined
   Dense xs -> xs
-  
 
 dimensions :: Grid a -> Coordinate
 dimensions grid = 
