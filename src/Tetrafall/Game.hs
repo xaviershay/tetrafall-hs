@@ -7,7 +7,7 @@ import Lens.Micro.Platform
 
 import qualified Data.HashMap.Strict as HashMap
 
-import System.Random (StdGen, randomR, mkStdGen)
+import System.Random (randomR, mkStdGen)
 
 step :: Game -> Game
 step game = 
@@ -20,12 +20,12 @@ step game =
         newGame = over score ((+) 1) gameWithParticle
     in case newGame ^. currentPiece of
         Nothing -> 
-            let randomizerEnv = RandomizerEnv (newGame ^. rng)
-                randomizerFunc = _randomizer newGame
-                (tetrominoType, newRandomizerEnv) = randomizerFunc randomizerEnv
+            let currentRandomizerEnv = newGame ^. randomizerEnv
+                randomizerFunc = _randomizerSelection currentRandomizerEnv
+                (tetrominoType, newRandomizerEnv) = randomizerFunc currentRandomizerEnv
                 newPiece = Tetromino tetrominoType (4, 1) North
-                newRng = newRandomizerEnv ^. randomizerEnvRng
-            in newGame & currentPiece .~ Just newPiece & rng .~ newRng
+            in newGame & currentPiece .~ Just newPiece 
+                       & randomizerEnv .~ newRandomizerEnv
         Just piece -> 
             let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
                 movedPieceGrid = getTetrominoGrid movedPiece
@@ -160,8 +160,8 @@ defaultGame = Game
   , _score = 0
   , _currentPiece = Nothing
   , _slideState = CanFall
-  , _rng = mkStdGen 42  -- Fixed seed for reproducible testing, could be randomized
+  , _rng = mkStdGen 42
   , _particles = mempty
   , _windowSize = (0, 0)  -- Will be set during initialization
-  , _randomizer = Tetrafall.Randomizer.og1985
+  , _randomizerEnv = RandomizerEnv (mkStdGen 24) [] 0 [] Tetrafall.Randomizer.og1985
   }

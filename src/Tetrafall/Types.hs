@@ -31,12 +31,13 @@ module Tetrafall.Types
   , rotateCW
   , rotateCCW
   , randomizerEnvRng
+  , randomizerEnv
   ) where
 
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Hashable (Hashable(..))
 import Lens.Micro.Platform
-import System.Random (StdGen, mkStdGen)
+import System.Random (StdGen)
 
 import Tetrafall.Types.Coordinate
 import Tetrafall.Types.Grid
@@ -50,8 +51,14 @@ instance Hashable TetrominoType where
 data Cell = Empty | Garbage | TetrominoCell TetrominoType
   deriving (Eq, Ord, Show)
 
+type Randomizer = RandomizerEnv -> (TetrominoType, RandomizerEnv)
+
 data RandomizerEnv = RandomizerEnv
   { _randomizerEnvRng :: StdGen
+  , _randomizerEnvHistory :: [TetrominoType] -- Most recent piece at head of list
+  , _randomizerBagCapacity :: Int
+  , _randomizerBag :: [TetrominoType]
+  , _randomizerSelection :: Randomizer
   }
 makeLenses ''RandomizerEnv
 
@@ -86,8 +93,6 @@ makeLenses ''Particle
 mkParticle :: Particle
 mkParticle = Particle { _particleLocation = (0.0, 0.0), _particleAge = 0 }
 
-type Randomizer = RandomizerEnv -> (TetrominoType, RandomizerEnv)
-
 data Action =
     ActionLeft
   | ActionRight
@@ -102,7 +107,7 @@ data Game = Game
   , _currentPiece :: Maybe Tetromino
   , _score :: Int
   , _slideState :: SlideState
-  , _randomizer :: Randomizer
+  , _randomizerEnv :: RandomizerEnv
   , _rng :: StdGen
   , _particles :: [Particle]
   , _windowSize :: (Int, Int)
