@@ -520,4 +520,75 @@ gridTests = testGroup "Grid Tests"
         result @?= expectedGrid
     ]
 
+  , testGroup "Grid crop function"
+    [ testCase "Crop dense grid - basic crop" $ do
+        let originalGrid = makeDense (4, 3) 'A'
+            croppedGrid = crop ((1, 1), (2, 2)) originalGrid
+        dimensions croppedGrid @?= (2, 2)
+        toList croppedGrid @?= [((1, 1), 'A'), ((2, 1), 'A'), ((1, 2), 'A'), ((2, 2), 'A')]
+    
+    , testCase "Crop dense grid - extend beyond bounds" $ do
+        let originalGrid = makeDense (2, 2) 'X'
+            croppedGrid = crop ((0, 0), (3, 3)) originalGrid
+        dimensions croppedGrid @?= (4, 4)
+        -- Original cells should be preserved, new areas filled with empty value
+        toList croppedGrid @?= [((0, 0), 'X'), ((1, 0), 'X'), ((2, 0), 'X'), ((3, 0), 'X'),
+                                ((0, 1), 'X'), ((1, 1), 'X'), ((2, 1), 'X'), ((3, 1), 'X'),
+                                ((0, 2), 'X'), ((1, 2), 'X'), ((2, 2), 'X'), ((3, 2), 'X'),
+                                ((0, 3), 'X'), ((1, 3), 'X'), ((2, 3), 'X'), ((3, 3), 'X')]
+        
+    , testCase "Crop dense grid - shift coordinates" $ do
+        let originalGrid = setAt (1, 1) 'B' $ makeDense (3, 3) 'A'
+            croppedGrid = crop ((2, 2), (4, 4)) originalGrid
+        dimensions croppedGrid @?= (3, 3)
+        -- The 'B' at (1,1) should not appear in the cropped region
+        toList croppedGrid @?= [((2, 2), 'A'), ((3, 2), 'A'), ((4, 2), 'A'),
+                                ((2, 3), 'A'), ((3, 3), 'A'), ((4, 3), 'A'),
+                                ((2, 4), 'A'), ((3, 4), 'A'), ((4, 4), 'A')]
+    
+    , testCase "Crop sparse grid - basic crop" $ do
+        let coords = [((0, 0), 'X'), ((2, 1), 'Y'), ((4, 2), 'Z')]
+            originalGrid = makeSparse ' ' coords
+            croppedGrid = crop ((1, 1), (3, 2)) originalGrid
+        toList croppedGrid @?= [((2, 1), 'Y')]
+        
+    , testCase "Crop sparse grid - no overlap" $ do
+        let coords = [((0, 0), 'X'), ((1, 0), 'Y')]
+            originalGrid = makeSparse ' ' coords
+            croppedGrid = crop ((5, 5), (7, 7)) originalGrid
+        toList croppedGrid @?= []
+        extent croppedGrid @?= ((0, 0), (-1, -1))  -- Empty grid extent
+    ]
+
+  , testGroup "Grid double function"
+    [ testCase "Double sparse grid - basic functionality" $ do
+        let coords = [((0, 0), 'X'), ((1, 0), 'Y')]
+            originalGrid = makeSparse ' ' coords
+            doubledGrid = double originalGrid
+        dimensions doubledGrid @?= (4, 1)  -- Width doubles from 2 to 4
+        extent doubledGrid @?= ((0, 0), (3, 0))
+        toList doubledGrid @?= [((0, 0), 'X'), ((1, 0), 'X'), ((2, 0), 'Y'), ((3, 0), 'Y')]
+    
+    , testCase "Double sparse grid - empty grid" $ do
+        let originalGrid = makeSparse ' ' ([] :: [(Coordinate, Char)])
+            doubledGrid = double originalGrid
+        toList doubledGrid @?= []
+        extent doubledGrid @?= ((0, 0), (-1, -1))  -- Empty grid extent
+    
+    , testCase "Double sparse grid - single cell" $ do
+        let coords = [((2, 3), 'A')]
+            originalGrid = makeSparse ' ' coords
+            doubledGrid = double originalGrid
+        dimensions doubledGrid @?= (2, 1)  -- Single cell becomes two cells wide
+        extent doubledGrid @?= ((4, 3), (5, 3))  -- x coordinates get doubled
+        toList doubledGrid @?= [((4, 3), 'A'), ((5, 3), 'A')]
+    
+    , testCase "Double sparse grid - multiple rows" $ do
+        let coords = [((0, 0), 'A'), ((1, 1), 'B')]
+            originalGrid = makeSparse ' ' coords  
+            doubledGrid = double originalGrid
+        dimensions doubledGrid @?= (4, 2)
+        toList doubledGrid @?= [((0, 0), 'A'), ((1, 0), 'A'), ((2, 1), 'B'), ((3, 1), 'B')]
+    ]
+
   ]

@@ -1,10 +1,10 @@
-module Tetrafall.Types.Grid (makeDense, makeSparse, makeSparseWithExtent, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise, clearLines) where
+module Tetrafall.Types.Grid (makeDense, makeSparse, makeSparseWithExtent, dimensions, extent, overlay, toList, toVector, setAt, double, toSparse, overlap, isWithinBounds, Grid, emptyGrid, rotateClockwise, rotateCounterClockwise, clearLines, crop) where
 
 import Tetrafall.Types.Coordinate
 
 import qualified Data.Vector as V
 import Data.Vector (Vector)
-import Data.List (sortBy)
+import Data.List (sortBy, foldl')
 import Data.Function (on)
 
 data CellData a = 
@@ -41,7 +41,9 @@ instance Eq a => Eq (Grid a) where
 toList :: Grid a -> [(Coordinate, a)]
 toList g = case (_cells g) of
   Sparse xs -> xs
-  Dense xs -> concatMap (\(y, row) -> map (\(x, val) -> ((x, y), val)) (V.toList (V.indexed row))) (V.toList (V.indexed xs))
+  Dense xs -> 
+    let ((minX, minY), _) = _extent g
+    in concatMap (\(y, row) -> map (\(x, val) -> ((x + minX, y + minY), val)) (V.toList (V.indexed row))) (V.toList (V.indexed xs))
 
 toVector :: Grid a -> Vector (Vector a)
 toVector g = case (_cells g) of
@@ -128,9 +130,20 @@ overlay bg fg = case (_cells bg, _cells fg) of
                         in ((minimum xs, minimum ys), (maximum xs, maximum ys))
     in Grid newExtent (Sparse combinedCells) (_emptyValue bg)
 
-double :: Grid a ->  Grid a
+double :: Eq a => Grid a ->  Grid a
 double grid = case (_cells grid) of
-  Sparse _ -> undefined
+  Sparse cells ->
+    let ((minX, minY), (maxX, maxY)) = _extent grid
+        -- Double each coordinate horizontally and create two copies of each cell
+        doubledCells = concatMap (\((x, y), cell) -> 
+          let newX1 = (x - minX) * 2 + (minX * 2)
+              newX2 = newX1 + 1
+          in [((newX1, y), cell), ((newX2, y), cell)]) cells
+        newExtent = if null cells
+                   then ((0, 0), (-1, -1))  -- Empty grid
+                   else ((minX * 2, minY), (maxX * 2 + 1, maxY))
+    in makeSparseWithExtent (_emptyValue grid) newExtent doubledCells
+    
   Dense originalContents -> Grid
     { _extent = ((minX * 2, minY), (maxX * 2 + 1, maxY))
     , _cells = Dense $ V.fromList $ map doubleRow (V.toList originalContents)
@@ -170,6 +183,17 @@ toSparse :: Eq a => Grid a -> [(Coordinate, a)]
 toSparse grid = case (_cells grid) of
   Sparse xs -> xs
   Dense _ -> filter ((/= _emptyValue grid) . snd) (toList grid)
+
+toDense :: Eq a => a -> (Coordinate, Coordinate) -> [(Coordinate, a)] -> Grid a
+toDense emptyVal newExtent@((minX, minY), (maxX, maxY)) sparseCells =
+  let width = maxX - minX + 1
+      height = maxY - minY + 1
+      -- Create an empty dense grid
+      emptyDenseGrid = makeDense (width, height) emptyVal
+      adjustedEmptyGrid = emptyDenseGrid { _extent = newExtent }
+      -- Create a sparse grid with the cells and overlay it
+      sparseGrid = makeSparseWithExtent emptyVal newExtent sparseCells
+  in overlay adjustedEmptyGrid sparseGrid
 
 overlap :: Eq a => Grid a -> Grid a -> Bool
 overlap grid1 grid2 = 
@@ -263,3 +287,21 @@ clearLines grid = case (_cells grid) of
     in grid { _cells = Dense newGridVector }
   
   Sparse _ -> grid  -- For sparse grids, we don't support line clearing yet
+
+-- Crop a grid to a new extent, filling with empty element if extending beyond bounds
+crop :: Eq a => (Coordinate, Coordinate) -> Grid a -> Grid a
+crop newExtent@((newMinX, newMinY), (newMaxX, newMaxY)) grid = 
+  let originalSparse = toSparse grid
+      emptyVal = _emptyValue grid
+      
+      -- Filter sparse cells to only those within the new extent bounds
+      filteredCells = [(coord, val) | (coord@(x, y), val) <- originalSparse, 
+                       x >= newMinX && x <= newMaxX && y >= newMinY && y <= newMaxY]
+      
+  in case (_cells grid) of
+      Dense _ -> toDense emptyVal newExtent filteredCells
+      Sparse _ -> 
+        let finalExtent = if null filteredCells 
+                         then ((0, 0), (-1, -1))
+                         else newExtent
+        in grid { _extent = finalExtent, _cells = Sparse filteredCells }
