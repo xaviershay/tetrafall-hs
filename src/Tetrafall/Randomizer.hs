@@ -1,13 +1,15 @@
-module Tetrafall.Randomizer (Randomizer, og1985) where
+module Tetrafall.Randomizer (Randomizer, og1985, nes) where
 
 import Tetrafall.Types
-import System.Random (randomR)
+import System.Random (StdGen, randomR)
 
-og1985 :: Randomizer
-og1985 = uniform
+build rng f = RandomizerEnv rng [] 0 [] f
 
-nes :: Randomizer
-nes = withHistory 1 (retryN 1 (forbidRecent 1) uniform)
+og1985 :: StdGen -> RandomizerEnv
+og1985 rng = build rng uniform
+
+nes :: StdGen -> RandomizerEnv
+nes rng = build rng $ withHistory 1 (retryN 1 (forbidRecent 1) uniform)
 
 uniform :: Randomizer
 uniform env = 

@@ -163,5 +163,5 @@ defaultGame = Game
   , _rng = mkStdGen 42
   , _particles = mempty
   , _windowSize = (0, 0)  -- Will be set during initialization
-  , _randomizerEnv = RandomizerEnv (mkStdGen 24) [] 0 [] Tetrafall.Randomizer.og1985
+  , _randomizerEnv = Tetrafall.Randomizer.og1985 (mkStdGen 24)
   }
