@@ -194,8 +194,8 @@ redAttr :: Int -> AttrName
 redAttr i = attrName ("red-" <> show i)
 
 attributes :: AttrMap
-attributes = attrMap (V.white `on` V.black) $
-    [ (backgroundAttr, bg V.black)
+attributes = attrMap (V.white `on` V.rgbColor 0 0 0) $
+    [ (backgroundAttr, bg (V.rgbColor 0 0 0))
     , (particleAttr, fg V.white)
     , (borderAttr, fg (V.rgbColor 180 180 180))  -- dull white
     , (scoringTextAttr, fg V.white)
@@ -212,8 +212,8 @@ attributes = attrMap (V.white `on` V.black) $
 app :: App St CustomEvent ()
 app =
     App { appDraw = \s -> 
-            [ playfieldLayer s  -- Foreground layer (playfield on top)
-            ] ++ drawParticleLayerList s  -- Background layers (one per particle)
+            [ playfieldLayer s
+            ] ++ drawParticleLayerList s
             ++ [backgroundLayer s]
         , appHandleEvent = appEvent
         , appStartEvent = return ()
