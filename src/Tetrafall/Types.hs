@@ -10,6 +10,7 @@ module Tetrafall.Types
   , Tetromino(..)
   , Action(..)
   , SlideState(..)
+  , ScoreEvent(..)
   , Randomizer
   , RandomizerEnv(..)
   , defaultTetrominoMap
@@ -33,6 +34,8 @@ module Tetrafall.Types
   , rotateCCW
   , randomizerEnvRng
   , randomizerEnv
+  , scoreLines
+  , scoreLevel
   ) where
 
 import Data.HashMap.Strict (HashMap, fromList)
@@ -122,6 +125,12 @@ data SlideState =
   | Sliding Coordinate  -- Piece cannot fall, tracking position for slide detection
   | ShouldLock  -- Piece should be locked immediately (e.g., after hard drop)
   deriving (Eq, Show)
+
+data ScoreEvent = ScoreEvent
+  { _scoreLines :: Int
+  , _scoreLevel :: Int
+  } deriving (Eq, Show)
+makeLenses ''ScoreEvent
 
 makeLenses ''Game
 

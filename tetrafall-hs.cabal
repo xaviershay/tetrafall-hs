@@ -29,6 +29,7 @@ library
       Tetrafall.Game
       Tetrafall.KeyboardConfig
       Tetrafall.Randomizer
+      Tetrafall.Scoring
       Tetrafall.Types
       Tetrafall.Types.Coordinate
       Tetrafall.Types.Grid
@@ -98,6 +99,7 @@ test-suite tetrafall-hs-test
   main-is: Spec.hs
   other-modules:
       Game
+      Scoring.Scoring
       Types.Grid
       Types.Slide
       Types.Types

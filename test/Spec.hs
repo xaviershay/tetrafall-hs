@@ -5,6 +5,7 @@ import Types.Grid (gridTests)
 import Types.Types (typesTests)
 import Types.Slide (slideTests)
 import Game (gameTests)
+import Scoring.Scoring (scoringTests)
 
 main :: IO ()
 main = defaultMain tests
@@ -16,6 +17,7 @@ tests = testGroup "Tetrafall Tests"
   , typesTests
   , slideTests
   , gameTests
+  , scoringTests
   ]
 
 unitTests :: TestTree
