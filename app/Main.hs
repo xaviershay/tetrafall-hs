@@ -251,7 +251,7 @@ main = do
     chan <- newBChan 10
     _ <- forkIO $ forever $ do
         writeBChan chan Tick
-        threadDelay 100000 -- decides how fast your game moves
+        threadDelay 200000 -- decides how fast your game moves
     let buildVty = mkVty $ defaultConfig { configPreferredColorMode = Just FullColor }
     initialVty <- buildVty
     
