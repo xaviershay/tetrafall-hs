@@ -4,7 +4,7 @@ module Main (main) where
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toSparse, double)
-import Tetrafall.Game (step, apply, getTetrominoGrid)
+import Tetrafall.Game (step, apply, getTetrominoGrid, defaultGame)
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V

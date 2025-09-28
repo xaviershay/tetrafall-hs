@@ -28,6 +28,7 @@ library
       Lib
       Tetrafall.Game
       Tetrafall.KeyboardConfig
+      Tetrafall.Randomizer
       Tetrafall.Types
       Tetrafall.Types.Coordinate
       Tetrafall.Types.Grid

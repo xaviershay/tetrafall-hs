@@ -10,6 +10,8 @@ module Tetrafall.Types
   , Tetromino(..)
   , Action(..)
   , SlideState(..)
+  , Randomizer
+  , RandomizerEnv(..)
   , defaultTetrominoMap
   , TetrominoMap
   , dimensions
@@ -24,13 +26,12 @@ module Tetrafall.Types
   , tetrominoType
   , position
   , orientation
-  , defaultGame
   , particleLocation
   , mkParticle
   , rotateCW
   , rotateCCW
+  , randomizerEnvRng
   ) where
-
 
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Hashable (Hashable(..))
@@ -49,7 +50,10 @@ instance Hashable TetrominoType where
 data Cell = Empty | Garbage | TetrominoCell TetrominoType
   deriving (Eq, Ord, Show)
 
-
+data RandomizerEnv = RandomizerEnv
+  { _randomizerEnvRng :: StdGen
+  }
+makeLenses ''RandomizerEnv
 
 data Orientation = North | East | South | West
   deriving (Show, Enum, Eq)
@@ -82,6 +86,8 @@ makeLenses ''Particle
 mkParticle :: Particle
 mkParticle = Particle { _particleLocation = (0.0, 0.0), _particleAge = 0 }
 
+type Randomizer = RandomizerEnv -> (TetrominoType, RandomizerEnv)
+
 data Action =
     ActionLeft
   | ActionRight
@@ -96,6 +102,7 @@ data Game = Game
   , _currentPiece :: Maybe Tetromino
   , _score :: Int
   , _slideState :: SlideState
+  , _randomizer :: Randomizer
   , _rng :: StdGen
   , _particles :: [Particle]
   , _windowSize :: (Int, Int)
@@ -121,14 +128,3 @@ defaultTetrominoMap = fromList
   , (L, makeSparseWithExtent Empty ((-1, -1), (1, 1)) [((-1, 0), TetrominoCell L), ((0, 0), TetrominoCell L), ((1, 0), TetrominoCell L), ((1, -1), TetrominoCell L)])
   , (O, makeSparseWithExtent Empty ((0, -1), (1, 0)) [((0, 0), TetrominoCell O), ((1, 0), TetrominoCell O), ((0, -1), TetrominoCell O), ((1, -1), TetrominoCell O)])
   ]
-
-defaultGame :: Game
-defaultGame = Game
-  { _grid =  makeDense (10, 22) Empty
-  , _score = 0
-  , _currentPiece = Nothing
-  , _slideState = CanFall
-  , _rng = mkStdGen 42  -- Fixed seed for reproducible testing, could be randomized
-  , _particles = mempty
-  , _windowSize = (0, 0)  -- Will be set during initialization
-  }

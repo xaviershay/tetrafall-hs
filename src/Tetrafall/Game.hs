@@ -1,12 +1,13 @@
-module Tetrafall.Game (step, apply, getTetrominoGrid) where
+module Tetrafall.Game (defaultGame, step, apply, getTetrominoGrid) where
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid
+import qualified Tetrafall.Randomizer
 import Lens.Micro.Platform
 
 import qualified Data.HashMap.Strict as HashMap
 
-import System.Random (StdGen, randomR)
+import System.Random (StdGen, randomR, mkStdGen)
 
 step :: Game -> Game
 step game = 
@@ -19,7 +20,11 @@ step game =
         newGame = over score ((+) 1) gameWithParticle
     in case newGame ^. currentPiece of
         Nothing -> 
-            let (newPiece, newRng) = randomTetromino (newGame ^. rng)
+            let randomizerEnv = RandomizerEnv (newGame ^. rng)
+                randomizerFunc = _randomizer newGame
+                (tetrominoType, newRandomizerEnv) = randomizerFunc randomizerEnv
+                newPiece = Tetromino tetrominoType (4, 1) North
+                newRng = newRandomizerEnv ^. randomizerEnvRng
             in newGame & currentPiece .~ Just newPiece & rng .~ newRng
         Just piece -> 
             let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
@@ -143,14 +148,20 @@ getTetrominoGrid piece =
       translatedCells = map (\((x, y), cell) -> ((x + dx, y + dy), cell)) (toSparse rotatedGrid)
   in makeSparse Empty translatedCells
 
--- Create a random tetromino at the spawn position
-randomTetromino :: StdGen -> (Tetromino, StdGen)
-randomTetromino gen = 
-  let allTypes = [S, Z, J, L, O, I, T]
-      (index, newGen) = randomR (0, length allTypes - 1) gen
-      selectedType = allTypes !! index
-  in (Tetromino selectedType (4, 1) North, newGen)
+
 
 -- Helper function to reset slide state when piece moves
 resetSlideState :: Game -> Game
 resetSlideState = slideState .~ CanFall
+
+defaultGame :: Game
+defaultGame = Game
+  { _grid =  makeDense (10, 22) Empty
+  , _score = 0
+  , _currentPiece = Nothing
+  , _slideState = CanFall
+  , _rng = mkStdGen 42  -- Fixed seed for reproducible testing, could be randomized
+  , _particles = mempty
+  , _windowSize = (0, 0)  -- Will be set during initialization
+  , _randomizer = Tetrafall.Randomizer.og1985
+  }
