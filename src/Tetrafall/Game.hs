@@ -68,58 +68,41 @@ step game =
                                      & slideState .~ CanFall
                                      & score %~ (+ scorePoints)
 
+-- Movement helper functions
+moveLeft, moveRight, moveDown :: Coordinate -> Coordinate
+moveLeft (x, y) = (x - 1, y)
+moveRight (x, y) = (x + 1, y)
+moveDown (x, y) = (x, y + 1)
+
+-- Helper function for applying movements
+applyMovement :: (Coordinate -> Coordinate) -> Game -> Game
+applyMovement moveFunc game = 
+  case game ^. currentPiece of
+    Nothing -> game
+    Just piece -> 
+      let newPiece = piece & position %~ moveFunc
+      in if isValidMove game newPiece
+         then resetSlideState $ game & currentPiece .~ Just newPiece
+         else game
+
+-- Helper function for applying rotations
+applyRotation :: (Orientation -> Orientation) -> Game -> Game
+applyRotation rotateFunc game = 
+  case game ^. currentPiece of
+    Nothing -> game
+    Just piece -> 
+      let newPiece = piece & orientation %~ rotateFunc
+      in if isValidMove game newPiece
+         then resetSlideState $ game & currentPiece .~ Just newPiece
+         else game
+
 apply :: Action -> Game -> Game
 apply ActionStep game = step game
-
-apply ActionLeft game = 
-  case game ^. currentPiece of
-    Nothing -> game
-    Just piece -> 
-      let newPosition = (fst (piece ^. position) - 1, snd (piece ^. position))
-          newPiece = piece & position .~ newPosition
-      in if isValidMove game newPiece
-         then resetSlideState $ game & currentPiece .~ Just newPiece
-         else game
-
-apply ActionRight game = 
-  case game ^. currentPiece of
-    Nothing -> game
-    Just piece -> 
-      let newPosition = (fst (piece ^. position) + 1, snd (piece ^. position))
-          newPiece = piece & position .~ newPosition
-      in if isValidMove game newPiece
-         then resetSlideState $ game & currentPiece .~ Just newPiece
-         else game
-
-apply ActionRotateCW game =
-  case game ^. currentPiece of
-    Nothing -> game
-    Just piece ->
-      let newOrientation = rotateCW (piece ^. orientation)
-          newPiece = piece & orientation .~ newOrientation
-      in if isValidMove game newPiece
-         then resetSlideState $ game & currentPiece .~ Just newPiece
-         else game
-
-apply ActionRotateCCW game =
-  case game ^. currentPiece of
-    Nothing -> game
-    Just piece ->
-      let newOrientation = rotateCCW (piece ^. orientation)
-          newPiece = piece & orientation .~ newOrientation
-      in if isValidMove game newPiece
-         then resetSlideState $ game & currentPiece .~ Just newPiece
-         else game
-
-apply ActionSoftDrop game = 
-  case game ^. currentPiece of
-    Nothing -> game
-    Just piece -> 
-      let newPosition = (fst (piece ^. position), snd (piece ^. position) + 1)
-          newPiece = piece & position .~ newPosition
-      in if isValidMove game newPiece
-         then resetSlideState $ game & currentPiece .~ Just newPiece
-         else game
+apply ActionLeft game = applyMovement moveLeft game
+apply ActionRight game = applyMovement moveRight game
+apply ActionSoftDrop game = applyMovement moveDown game
+apply ActionRotateCW game = applyRotation rotateCW game
+apply ActionRotateCCW game = applyRotation rotateCCW game
 
 apply ActionHardDrop game = 
   case game ^. currentPiece of
