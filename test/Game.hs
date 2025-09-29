@@ -29,6 +29,10 @@ defaultTestGame = defaultGame
   { _grid = makeDense (10, 20) Empty
   , _currentPiece = Just tetrominoI 
   }
+
+step :: Game -> Game
+step = apply ActionStep
+
 gameTests :: TestTree
 gameTests = testGroup "Game Tests"
   [ testGroup "Next pieces functionality"

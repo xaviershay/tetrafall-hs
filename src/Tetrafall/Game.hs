@@ -1,4 +1,4 @@
-module Tetrafall.Game (defaultGame, step, apply, getTetrominoGrid) where
+module Tetrafall.Game (defaultGame, apply, getTetrominoGrid) where
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid
@@ -69,6 +69,8 @@ step game =
                                      & score %~ (+ scorePoints)
 
 apply :: Action -> Game -> Game
+apply ActionStep game = step game
+
 apply ActionLeft game = 
   case game ^. currentPiece of
     Nothing -> game

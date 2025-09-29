@@ -4,7 +4,7 @@ module Main (main) where
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toList, double, makeDense, crop)
-import Tetrafall.Game (step, apply, getTetrominoGrid, defaultGame)
+import Tetrafall.Game (apply, getTetrominoGrid, defaultGame)
 import Tetrafall.Animation
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
@@ -198,7 +198,7 @@ appEvent (AppEvent Tick) = do
                    "Slide State: " ++ show (game ^. slideState) ++ "\n" ++
                    "Inter: " ++ show (st ^. stIntermediaryScores) ++ "\n" ++
                    "Grid:\n" ++ gridString ++ "\n"
-    modify (stGame %~ step)
+    modify (stGame %~ apply ActionStep)
     
     checkAndGenerateScoreAnimation oldScore
     

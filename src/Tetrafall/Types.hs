@@ -108,6 +108,7 @@ data Action =
   | ActionRotateCCW
   | ActionSoftDrop
   | ActionHardDrop
+  | ActionStep
   deriving (Eq, Show)
 
 data ScoreEvent = ScoreEvent
