@@ -7,29 +7,7 @@ This document identifies opportunities to enhance code clarity and conciseness u
 
 
 
-### 5. Scoring.hs - Pattern Matching
-**Current:** Explicit case analysis with error for invalid input
-```haskell
-simple :: ScoreEvent -> Int
-simple scoreEvent = 
-  let linesCleared = _scoreLines scoreEvent
-      level = _scoreLevel scoreEvent
-  in case linesCleared of
-       1 -> 100 * level
-       2 -> 300 * level
-       3 -> 500 * level
-       4 -> 800 * level
-       _ -> error "invalid number of lines cleared"
-```
 
-**Refactor:** Use lookup table or point-free style
-```haskell
--- Option 1: Lookup table
-simple :: ScoreEvent -> Int
-simple (ScoreEvent lines level) = 
-  maybe (error "invalid number of lines cleared") (* level) $
-  lookup lines [(1, 100), (2, 300), (3, 500), (4, 800)]
-```
 
 ### 6. KeyboardConfig.hs - getActionForKey Function
 **Current:** Repetitive guard conditions
