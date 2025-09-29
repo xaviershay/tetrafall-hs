@@ -75,13 +75,11 @@ lockPiece piece game =
             & slideState .~ CanFall
             & score %~ (+ scorePoints)
 
--- Movement helper functions
 moveLeft, moveRight, moveDown :: Coordinate -> Coordinate
 moveLeft (x, y) = (x - 1, y)
 moveRight (x, y) = (x + 1, y)
 moveDown (x, y) = (x, y + 1)
 
--- Helper function for applying movements
 applyMovement :: (Coordinate -> Coordinate) -> Game -> Game
 applyMovement moveFunc game = 
   case game ^. currentPiece of
@@ -92,7 +90,6 @@ applyMovement moveFunc game =
          then resetSlideState $ game & currentPiece .~ Just newPiece
          else game
 
--- Helper function for applying rotations
 applyRotation :: (Orientation -> Orientation) -> Game -> Game
 applyRotation rotateFunc game = 
   case game ^. currentPiece of
@@ -153,7 +150,6 @@ getTetrominoGrid piece =
 
 
 
--- Calculate score based on lines cleared using the configured algorithm
 calculateScore :: Game -> Int -> Int
 calculateScore game linesCleared
   | linesCleared <= 0 = 0
@@ -163,7 +159,6 @@ calculateScore game linesCleared
           scoreEvent = ScoreEvent linesCleared level
       in algorithm scoreEvent
 
--- Helper function to reset slide state when piece moves
 resetSlideState :: Game -> Game
 resetSlideState = slideState .~ CanFall
 
