@@ -8,6 +8,7 @@ module Tetrafall.KeyboardConfig
 
 import Tetrafall.Types (Action(..))
 import qualified Graphics.Vty as V
+import Data.Maybe (listToMaybe, mapMaybe)
 
 data KeyboardConfig = KeyboardConfig
   { leftKeys :: [V.Key]
@@ -42,11 +43,13 @@ defaultConfig :: KeyboardConfig
 defaultConfig = colemakConfig
 
 getActionForKey :: KeyboardConfig -> V.Key -> Maybe Action
-getActionForKey config key
-  | key `elem` leftKeys config = Just ActionLeft
-  | key `elem` rightKeys config = Just ActionRight
-  | key `elem` rotateCWKeys config = Just ActionRotateCW
-  | key `elem` rotateCCWKeys config = Just ActionRotateCCW
-  | key `elem` softDropKeys config = Just ActionSoftDrop
-  | key `elem` hardDropKeys config = Just ActionHardDrop
-  | otherwise = Nothing
+getActionForKey config key = 
+  listToMaybe $ mapMaybe (\(keys, action) -> 
+    if key `elem` keys config then Just action else Nothing) $
+  [ (leftKeys, ActionLeft)
+  , (rightKeys, ActionRight) 
+  , (rotateCWKeys, ActionRotateCW)
+  , (rotateCCWKeys, ActionRotateCCW)
+  , (softDropKeys, ActionSoftDrop)
+  , (hardDropKeys, ActionHardDrop)
+  ]

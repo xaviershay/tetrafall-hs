@@ -9,34 +9,7 @@ This document identifies opportunities to enhance code clarity and conciseness u
 
 
 
-### 6. KeyboardConfig.hs - getActionForKey Function
-**Current:** Repetitive guard conditions
-```haskell
-getActionForKey :: KeyboardConfig -> V.Key -> Maybe Action
-getActionForKey config key
-  | key `elem` leftKeys config = Just ActionLeft
-  | key `elem` rightKeys config = Just ActionRight
-  | key `elem` rotateCWKeys config = Just ActionRotateCW
-  | key `elem` rotateCCWKeys config = Just ActionRotateCCW
-  | key `elem` softDropKeys config = Just ActionSoftDrop
-  | key `elem` hardDropKeys config = Just ActionHardDrop
-  | otherwise = Nothing
-```
 
-**Refactor:** Use lookup table approach
-```haskell
-getActionForKey :: KeyboardConfig -> V.Key -> Maybe Action
-getActionForKey config key = 
-  listToMaybe $ mapMaybe (\(keys, action) -> 
-    if key `elem` keys config then Just action else Nothing) $
-  [ (leftKeys, ActionLeft)
-  , (rightKeys, ActionRight) 
-  , (rotateCWKeys, ActionRotateCW)
-  , (rotateCCWKeys, ActionRotateCCW)
-  , (softDropKeys, ActionSoftDrop)
-  , (hardDropKeys, ActionHardDrop)
-  ]
-```
 
 ## Medium Priority Refactors
 
