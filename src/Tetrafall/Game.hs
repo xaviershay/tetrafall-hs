@@ -104,14 +104,16 @@ applyRotation rotateFunc game =
          else game
 
 apply :: Action -> Game -> Game
-apply ActionStep game = step game
-apply ActionLeft game = applyMovement moveLeft game
-apply ActionRight game = applyMovement moveRight game
-apply ActionSoftDrop game = applyMovement moveDown game
-apply ActionRotateCW game = applyRotation rotateCW game
-apply ActionRotateCCW game = applyRotation rotateCCW game
+apply ActionStep = step
+apply ActionLeft = applyMovement moveLeft
+apply ActionRight = applyMovement moveRight
+apply ActionSoftDrop = applyMovement moveDown
+apply ActionRotateCW = applyRotation rotateCW
+apply ActionRotateCCW = applyRotation rotateCCW
+apply ActionHardDrop = applyHardDrop
 
-apply ActionHardDrop game = 
+applyHardDrop :: Game -> Game
+applyHardDrop game =
   case game ^. currentPiece of
     Nothing -> game
     Just piece -> 
