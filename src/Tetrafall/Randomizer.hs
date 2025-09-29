@@ -3,6 +3,7 @@ module Tetrafall.Randomizer (Randomizer, og1985, nes, tetrisWorlds, tgm, tgm2, t
 import Tetrafall.Types
 import System.Random (StdGen, randomR)
 import Data.HashMap.Strict (empty, insert, lookup)
+import Control.Applicative (liftA2)
 import Prelude hiding (lookup)
 
 type Predicate = RandomizerEnv -> TetrominoType -> Bool
@@ -104,9 +105,9 @@ withHistory n baseRandomizer env =
         ) oldSinceLast allTypes
   in (selectedType, newEnv { _randomizerEnvHistory = updatedHistory, _randomizerCount = incrementedCount, _randomizerSinceLast = updatedSinceLast })
 
--- AND conjuction of predicates
+-- AND conjuction of predicates  
 andPredicate :: Predicate -> Predicate -> Predicate
-andPredicate pred1 pred2 env tetrominoType = pred1 env tetrominoType && pred2 env tetrominoType
+andPredicate pred1 pred2 env = liftA2 (&&) (pred1 env) (pred2 env)
 
 -- If this is the first piece (count == 0), forbid if the given type.
 forbidInitial :: TetrominoType -> Predicate

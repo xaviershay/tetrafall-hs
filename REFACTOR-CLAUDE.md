@@ -15,37 +15,7 @@ This document identifies opportunities to enhance code clarity and conciseness u
 
 
 
-### 9. Randomizer.hs - Predicate Combinations
-**Current:** Manual predicate combination
-```haskell
-andPredicate :: Predicate -> Predicate -> Predicate
-andPredicate pred1 pred2 env tetrominoType = pred1 env tetrominoType && pred2 env tetrominoType
-```
-
-**Refactor:** Use function composition
-```haskell
-andPredicate :: Predicate -> Predicate -> Predicate
-andPredicate = liftA2 (&&)
-```
-
 ## Low Priority Refactors
-
-### 10. Types.hs - TetrominoMap Construction
-**Current:** Large fromList with repetitive TetrominoCell constructors
-
-**Refactor:** Helper functions to reduce noise
-```haskell
-i, t, s, z, j, l, o :: Cell
-i = TetrominoCell I
-t = TetrominoCell T
--- etc.
-
-defaultTetrominoMap :: TetrominoMap
-defaultTetrominoMap = fromList
-  [ (I, makeSparseWithExtent Empty ((-1, -1), (2, 2)) [((-1, 0), i), ((0, 0), i), ((1, 0), i), ((2, 0), i)])
-  -- etc.
-  ]
-```
 
 ### 11. Game.hs - Step Function Complexity
 **Current:** Large nested function with multiple responsibilities
