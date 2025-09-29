@@ -6,67 +6,74 @@ import qualified Tetrafall.Randomizer
 import qualified Tetrafall.Scoring
 import Lens.Micro.Platform
 
+
 import qualified Data.HashMap.Strict as HashMap
 
 import System.Random (randomR, mkStdGen)
 
 step :: Game -> Game
-step game = 
-    let -- Clear existing particles and spawn new one at random location
-        (windowWidth, windowHeight) = game ^. windowSize
+step = handleCurrentPiece . spawnNewParticle
+
+spawnNewParticle :: Game -> Game
+spawnNewParticle game = 
+    let (windowWidth, windowHeight) = game ^. windowSize
         (randX, rng1) = randomR (0, windowWidth - 1) (game ^. rng)
         (randY, rng2) = randomR (0, windowHeight - 1) rng1
         newParticle = mkParticle & particleLocation .~ (fromIntegral randX, fromIntegral randY)
-        newGame = game & particles .~ [newParticle] & rng .~ rng2
-    in case newGame ^. currentPiece of
-        Nothing -> 
-            case newGame ^. gameNextPieces of
-                [] -> error "No next pieces available - should never happen"
-                (nextPieceType:remainingPieces) ->
-                    let currentRandomizerEnv = newGame ^. randomizerEnv
-                        randomizerFunc = _randomizerSelection currentRandomizerEnv
-                        (newNextPiece, newRandomizerEnv) = randomizerFunc currentRandomizerEnv
-                        newPiece = Tetromino nextPieceType (4, 1) North
-                        updatedNextPieces = remainingPieces ++ [newNextPiece]
-                    in newGame & currentPiece .~ Just newPiece 
-                               & gameNextPieces .~ updatedNextPieces
-                               & randomizerEnv .~ newRandomizerEnv
-        Just piece -> 
-            let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
-                movedPieceGrid = getTetrominoGrid movedPiece
-                baseGrid = newGame ^. grid
-                canFall = not (overlap baseGrid movedPieceGrid) && isWithinBounds baseGrid movedPieceGrid
-            in if canFall
-               then -- Piece can fall normally, reset slide state
-                   newGame & currentPiece .~ Just movedPiece & slideState .~ CanFall
-               else -- Piece cannot fall, check slide state
-                   case newGame ^. slideState of
-                       CanFall -> 
-                           -- First time piece can't fall, enter sliding state
-                           newGame & slideState .~ Sliding (piece ^. position)
-                       Sliding originalPos -> 
-                           -- Check if piece has moved since sliding started
-                           if piece ^. position == originalPos
-                           then -- Piece hasn't moved, lock it down
-                               let currentPieceGrid = getTetrominoGrid piece
-                                   gridWithPiece = baseGrid `overlay` currentPieceGrid
-                                   (newGrid, linesCleared) = clearLinesWithCount gridWithPiece
-                                   scorePoints = calculateScore newGame linesCleared
-                               in newGame & grid .~ newGrid 
-                                         & currentPiece .~ Nothing
-                                         & slideState .~ CanFall
-                                         & score %~ (+ scorePoints)
-                           else -- Piece has moved, continue sliding with new position
-                               newGame & slideState .~ Sliding (piece ^. position)
-                       ShouldLock -> 
-                           let currentPieceGrid = getTetrominoGrid piece
-                               gridWithPiece = baseGrid `overlay` currentPieceGrid
-                               (newGrid, linesCleared) = clearLinesWithCount gridWithPiece
-                               scorePoints = calculateScore newGame linesCleared
-                           in newGame & grid .~ newGrid 
-                                     & currentPiece .~ Nothing
-                                     & slideState .~ CanFall
-                                     & score %~ (+ scorePoints)
+    in game & particles .~ [newParticle] & rng .~ rng2
+
+handleCurrentPiece :: Game -> Game
+handleCurrentPiece game = case game ^. currentPiece of
+    Nothing -> handleNoPiece game
+    Just piece -> handleExistingPiece piece game
+
+handleNoPiece :: Game -> Game
+handleNoPiece game = 
+    case game ^. gameNextPieces of
+        [] -> error "No next pieces available - should never happen"
+        (nextPieceType:remainingPieces) ->
+            let currentRandomizerEnv = game ^. randomizerEnv
+                randomizerFunc = _randomizerSelection currentRandomizerEnv
+                (newNextPiece, newRandomizerEnv) = randomizerFunc currentRandomizerEnv
+                newPiece = Tetromino nextPieceType (4, 1) North
+                updatedNextPieces = remainingPieces ++ [newNextPiece]
+            in game & currentPiece .~ Just newPiece 
+                    & gameNextPieces .~ updatedNextPieces
+                    & randomizerEnv .~ newRandomizerEnv
+
+handleExistingPiece :: Tetromino -> Game -> Game  
+handleExistingPiece piece game =
+    let movedPiece = over position (\(x, y) -> (x, y + 1)) piece
+        movedPieceGrid = getTetrominoGrid movedPiece
+        baseGrid = game ^. grid
+        canFall = not (overlap baseGrid movedPieceGrid) && isWithinBounds baseGrid movedPieceGrid
+    in if canFall
+       then game & currentPiece .~ Just movedPiece & slideState .~ CanFall
+       else handlePieceCannotFall piece game
+           
+handlePieceCannotFall :: Tetromino -> Game -> Game
+handlePieceCannotFall piece game = 
+    case game ^. slideState of
+        CanFall -> 
+            game & slideState .~ Sliding (piece ^. position)
+        Sliding originalPos -> 
+            if piece ^. position == originalPos
+            then lockPiece piece game
+            else game & slideState .~ Sliding (piece ^. position)
+        ShouldLock -> 
+            lockPiece piece game
+
+lockPiece :: Tetromino -> Game -> Game
+lockPiece piece game =
+    let currentPieceGrid = getTetrominoGrid piece
+        baseGrid = game ^. grid
+        gridWithPiece = baseGrid `overlay` currentPieceGrid
+        (newGrid, linesCleared) = clearLinesWithCount gridWithPiece
+        scorePoints = calculateScore game linesCleared
+    in game & grid .~ newGrid 
+            & currentPiece .~ Nothing
+            & slideState .~ CanFall
+            & score %~ (+ scorePoints)
 
 -- Movement helper functions
 moveLeft, moveRight, moveDown :: Coordinate -> Coordinate
