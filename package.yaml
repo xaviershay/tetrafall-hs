@@ -58,16 +58,6 @@ executables:
     dependencies:
     - tetrafall-hs
 
-  tetrafall-color-test:
-    main:                ColorTest.hs
-    source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - tetrafall-hs
-
 tests:
   tetrafall-hs-test:
     main:                Spec.hs

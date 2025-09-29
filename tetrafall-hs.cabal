@@ -25,7 +25,7 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Tetrafall.Animation
       Tetrafall.Game
       Tetrafall.KeyboardConfig
       Tetrafall.Randomizer
@@ -52,30 +52,6 @@ library
 
 executable tetrafall
   main-is: Main.hs
-  other-modules:
-      ColorTest
-  hs-source-dirs:
-      app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base >=4.7 && <5
-    , brick >=2.4
-    , containers
-    , hashable
-    , microlens-platform
-    , mtl
-    , random
-    , tetrafall-hs
-    , unordered-containers
-    , vector
-    , vty >=6.2
-    , vty-crossplatform >=0.4
-  default-language: Haskell2010
-
-executable tetrafall-color-test
-  main-is: ColorTest.hs
-  other-modules:
-      Main
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N

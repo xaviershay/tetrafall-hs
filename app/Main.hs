@@ -3,8 +3,9 @@
 module Main (main) where
 
 import Tetrafall.Types
-import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toSparse, toList, double, makeDense, makeSparse, crop, dimensions)
+import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toList, double, makeDense, crop)
 import Tetrafall.Game (step, apply, getTetrominoGrid, defaultGame)
+import Tetrafall.Animation
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
 import qualified Data.Vector as V
@@ -19,7 +20,7 @@ import Brick.Widgets.Border (border, borderWithLabel)
 import Brick.Widgets.Center (hCenter, hCenterLayer, vCenter, vCenterLayer)
 
 import qualified Brick.Animation as A
-import Control.Monad (forever, void)
+import Control.Monad (forever, void, when)
 import Control.Monad.IO.Class (liftIO)
 
 import Control.Concurrent (threadDelay, forkIO)
@@ -36,8 +37,25 @@ data St = St
   { _stAnimationManager :: A.AnimationManager St CustomEvent ()
   , _stGame :: Game
   , _particleAnimations :: M.Map Location (A.Animation St ())
+  , _stIntermediaryScores :: [Int]  -- List of scores to animate through
   }
 makeLenses ''St
+
+-- Get the score currently being displayed (head of intermediary list or game score)
+getDisplayedScore :: St -> Int
+getDisplayedScore st = 
+    case st ^. stIntermediaryScores of
+        (x:_) -> x
+        [] -> st ^. stGame . score
+
+-- Check if score changed and generate intermediary scores if needed
+checkAndGenerateScoreAnimation :: Int -> EventM () St ()
+checkAndGenerateScoreAnimation oldScore = do
+    st <- get
+    let newScore = st ^. stGame . score
+    when (oldScore /= newScore) $ do
+        let newScores = generateIntermediaryScores oldScore newScore
+        modify (stIntermediaryScores .~ newScores)
 
 startParticleAnimation :: Location -> EventM () St ()
 startParticleAnimation coord = do
@@ -82,7 +100,7 @@ playfieldLayer st =
     let
       game = st ^. stGame
       g = getFinalGrid game
-      s = game ^. score
+      s = getDisplayedScore st
       
       -- Main playfield
       playfield = withDefAttr borderAttr $ border $
@@ -146,18 +164,31 @@ debugPieceInfo (Just piece) =
        " grid coords: " ++ show gridCoords
 
 appEvent :: BrickEvent () CustomEvent -> EventM () St ()
-appEvent (AppEvent (AnimationUpdate act)) = act
+appEvent (AppEvent (AnimationUpdate act)) = do
+    act
+    -- Handle score animation - just pop the next score from the list
+    st <- get
+    let intermediaryScores = st ^. stIntermediaryScores
+        
+    case intermediaryScores of
+        (_:xs) -> modify (stIntermediaryScores .~ xs)
+        [] -> return ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
 appEvent (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt
 appEvent (VtyEvent (V.EvResize width height)) = do
     modify (stGame . windowSize .~ (width, height))
 appEvent (VtyEvent (V.EvKey key [])) = do
     case KeyConfig.getActionForKey KeyConfig.defaultConfig key of
-        Just action -> modify (stGame %~ apply action)
+        Just action -> do
+            st <-  get
+            let oldScore = st ^. stGame ^. score
+            modify (stGame %~ apply action)
+            checkAndGenerateScoreAnimation oldScore
         Nothing -> return ()
 appEvent (AppEvent Tick) = do
     st <- get
     let game = st ^. stGame
+        oldScore = game ^. score
         pieceInfo = debugPieceInfo (game ^. currentPiece)
         finalGrid = getFinalGrid game
         gridString = debugGridToString finalGrid
@@ -165,11 +196,12 @@ appEvent (AppEvent Tick) = do
                    pieceInfo ++ "\n" ++
                    "Score: " ++ show (game ^. score) ++ "\n" ++
                    "Slide State: " ++ show (game ^. slideState) ++ "\n" ++
+                   "Inter: " ++ show (st ^. stIntermediaryScores) ++ "\n" ++
                    "Grid:\n" ++ gridString ++ "\n"
-    liftIO $ appendFile "tetrafall.log" debugInfo
     modify (stGame %~ step)
     
-    -- Start animations for all particles
+    checkAndGenerateScoreAnimation oldScore
+    
     newGame <- gets (^. stGame)
     let locations = map (\p -> let (x, y) = p ^. particleLocation in Location (round x, round y)) (newGame ^. particles)
     mapM_ startParticleAnimation locations
@@ -266,6 +298,7 @@ main = do
           { _stAnimationManager = mgr
           , _stGame = gameWithWindowSize
           , _particleAnimations = M.empty
+          , _stIntermediaryScores = []
           }
 
     void $ customMain initialVty buildVty (Just chan) app defaultState 
