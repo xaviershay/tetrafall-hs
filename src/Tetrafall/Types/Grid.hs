@@ -7,6 +7,11 @@ import Data.Vector (Vector)
 import Data.List (sortBy)
 import Data.Function (on)
 
+-- Helper function for bounds checking
+inBounds :: (Coordinate, Coordinate) -> Coordinate -> Bool
+inBounds ((minX, minY), (maxX, maxY)) (x, y) = 
+  x >= minX && x <= maxX && y >= minY && y <= maxY
+
 data CellData a = 
     Sparse [(Coordinate, a)]
   | Dense (Vector (Vector a))
@@ -92,9 +97,10 @@ overlay bg fg = case (_cells bg, _cells fg) of
     where
       updateCell cells (coord, value) = 
         let (x, y) = coord
-            ((minX, minY), (maxX, maxY)) = _extent bg
-        in if x >= minX && x <= maxX && y >= minY && y <= maxY
-           then cells V.// [(y - minY, (cells V.! (y - minY)) V.// [(x - minX, value)])]
+            bgExtent = _extent bg
+        in if inBounds bgExtent coord
+           then let ((minX, minY), _) = bgExtent
+                in cells V.// [(y - minY, (cells V.! (y - minY)) V.// [(x - minX, value)])]
            else cells  -- Ignore out-of-bounds coordinates
   
   (Dense bgCells, Dense fgCells) ->
@@ -154,10 +160,10 @@ double grid = case (_cells grid) of
 
 
 setAt :: Eq a => Coordinate -> a -> Grid a -> Grid a
-setAt (x, y) cell grid = case (_cells grid) of
+setAt coord@(x, y) cell grid = case (_cells grid) of
   Dense cells -> 
-    let ((minX, minY), (maxX, maxY)) = _extent grid
-    in if x >= minX && x <= maxX && y >= minY && y <= maxY
+    let gridExtent@((minX, minY), _) = _extent grid
+    in if inBounds gridExtent coord
        then grid { _cells = (Dense (cells V.// [(y - minY, (cells V.! (y - minY)) V.// [(x - minX, cell)])])) }
        else grid  -- Ignore out-of-bounds coordinates
   

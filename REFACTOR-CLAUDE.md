@@ -13,21 +13,7 @@ This document identifies opportunities to enhance code clarity and conciseness u
 
 ## Medium Priority Refactors
 
-### 7. Grid.hs - Bounds Checking Pattern
-**Current:** Repetitive bounds checking in multiple functions
-```haskell
-if x >= minX && x <= maxX && y >= minY && y <= maxY
-```
 
-**Refactor:** Extract bounds checking function
-```haskell
-inBounds :: (Coordinate, Coordinate) -> Coordinate -> Bool
-inBounds ((minX, minY), (maxX, maxY)) (x, y) = 
-  x >= minX && x <= maxX && y >= minY && y <= maxY
-
--- Usage:
-if inBounds (_extent bg) coord then ...
-```
 
 ### 9. Randomizer.hs - Predicate Combinations
 **Current:** Manual predicate combination
