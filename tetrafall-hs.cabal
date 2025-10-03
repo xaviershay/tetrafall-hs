@@ -28,6 +28,7 @@ library
       Tetrafall.Animation
       Tetrafall.Game
       Tetrafall.KeyboardConfig
+      Tetrafall.Particle.Physics
       Tetrafall.Randomizer
       Tetrafall.Scoring
       Tetrafall.Types
