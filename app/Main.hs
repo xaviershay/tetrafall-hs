@@ -13,6 +13,7 @@ import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Data.Time.Clock (NominalDiffTime, getCurrentTime, diffUTCTime)
 import Data.IORef (newIORef, readIORef, writeIORef)
+import Text.Printf (printf)
 
 import Lens.Micro.Platform
 
@@ -108,11 +109,15 @@ playfieldLayer st =
       playfield = withDefAttr borderAttr $ border $
                   foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))
       
-      -- Right sidebar with next piece and score
+      -- Right sidebar with next piece, score, and time
+      timeSeconds = realToFrac (game ^. gameTime) :: Double
+      timeStr = printf "%.2f" timeSeconds
       sidebar = vBox 
                 [ renderNextPiece game
                 , withDefAttr borderAttr $ borderWithLabel (str "Score") $ 
                   hLimit 10 $ padLeft Max $ withDefAttr scoringTextAttr $ str (show s)
+                , withDefAttr borderAttr $ borderWithLabel (str "Time") $
+                  hLimit 10 $ padLeft Max $ withDefAttr scoringTextAttr $ str timeStr
                 ]
     in
     hCenterLayer $
