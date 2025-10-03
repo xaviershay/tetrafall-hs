@@ -2,6 +2,8 @@ module Tetrafall.Game (defaultGame, apply, getTetrominoGrid) where
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid
+import Tetrafall.Particle.Physics
+import Tetrafall.Particle.Firework
 import qualified Tetrafall.Randomizer
 import qualified Tetrafall.Scoring
 import Lens.Micro.Platform
@@ -9,7 +11,7 @@ import Lens.Micro.Platform
 import Data.Time.Clock (NominalDiffTime)
 import qualified Data.HashMap.Strict as HashMap
 
-import System.Random (randomR, mkStdGen)
+import System.Random (randomR, mkStdGen, StdGen)
 
 step :: Game -> Game
 step = handleCurrentPiece . spawnNewParticle
@@ -70,10 +72,42 @@ lockPiece piece game =
         gridWithPiece = baseGrid `overlay` currentPieceGrid
         (newGrid, linesCleared) = clearLinesWithCount gridWithPiece
         scorePoints = calculateScore game linesCleared
+        (newParticles, newRng) = if linesCleared > 0
+                                  then spawnFireworksForLines linesCleared game
+                                  else (game ^. particles, game ^. rng)
     in game & grid .~ newGrid 
             & currentPiece .~ Nothing
             & slideState .~ CanFall
             & score %~ (+ scorePoints)
+            & particles .~ newParticles
+            & rng .~ newRng
+
+spawnFireworksForLines :: Int -> Game -> ([Particle], StdGen)
+spawnFireworksForLines linesCleared game =
+    let (windowWidth, windowHeight) = game ^. windowSize
+        currentRng = game ^. rng
+        existingParticles = game ^. particles
+        numFireworks = min linesCleared 4  -- Spawn 1 firework per line cleared, max 4
+    in spawnMultipleFireworks numFireworks windowWidth windowHeight currentRng existingParticles
+
+spawnMultipleFireworks :: Int -> Int -> Int -> StdGen -> [Particle] -> ([Particle], StdGen)
+spawnMultipleFireworks 0 _ _ rng particles = (particles, rng)
+spawnMultipleFireworks n width height rng particles =
+    let (x, rng1) = randomR (0, width - 1) rng
+        (y, rng2) = randomR (0, height - 1) rng1
+        center = Vec2 (fromIntegral x) (fromIntegral y)
+        (fireworkParticles, rng3) = createLineClearFirework center rng2
+        newParticles = map fireworkParticleToParticle fireworkParticles
+    in spawnMultipleFireworks (n - 1) width height rng3 (particles ++ newParticles)
+
+fireworkParticleToParticle :: FireworkParticle -> Particle
+fireworkParticleToParticle fp =
+    let Vec2 x y = _fpPos fp
+    in Particle
+        { _particleLocation = (x, y)
+        , _particleAge = 0
+        , _particleType = ParticleFirework fp
+        }
 
 moveLeft, moveRight, moveDown :: Coordinate -> Coordinate
 moveLeft (x, y) = (x - 1, y)
@@ -115,9 +149,29 @@ applyTick dt game =
   let newAccum = game ^. gameStepAccum + dt
       stepSize = game ^. gameStepSize
       gameWithTime = game & gameTime %~ (+ dt)
+      updatedParticles = updateParticles dt (game ^. particles)
+      gameWithParticles = gameWithTime & particles .~ updatedParticles
   in if newAccum >= stepSize
-     then step (gameWithTime & gameStepAccum .~ (newAccum - stepSize))
-     else gameWithTime & gameStepAccum .~ newAccum
+     then step (gameWithParticles & gameStepAccum .~ (newAccum - stepSize))
+     else gameWithParticles & gameStepAccum .~ newAccum
+
+updateParticles :: NominalDiffTime -> [Particle] -> [Particle]
+updateParticles dt = filter (not . isParticleDead) . map (updateParticle dt)
+
+updateParticle :: NominalDiffTime -> Particle -> Particle
+updateParticle dt particle = case _particleType particle of
+  ParticleStar -> particle & particleAge %~ (+1)
+  ParticleFirework fp ->
+    let updatedFp = updateFireworkParticle dt defaultFireworkConfig fp
+        Vec2 x y = _fpPos updatedFp
+    in particle 
+        & particleLocation .~ (x, y)
+        & particleType .~ ParticleFirework updatedFp
+
+isParticleDead :: Particle -> Bool
+isParticleDead particle = case _particleType particle of
+  ParticleStar -> _particleAge particle > 100  -- Keep star particles for 100 ticks
+  ParticleFirework fp -> _fpLifeState fp == ParticleDead
 
 applyHardDrop :: Game -> Game
 applyHardDrop game =

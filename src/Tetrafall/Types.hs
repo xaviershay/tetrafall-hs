@@ -14,6 +14,7 @@ module Tetrafall.Types
   , ScoringAlgorithm
   , Randomizer
   , RandomizerEnv(..)
+  , Particle(..)
   , ParticleType(..)
   , Vec2(..)
   , ParticleLifeState(..)
@@ -40,6 +41,8 @@ module Tetrafall.Types
   , position
   , orientation
   , particleLocation
+  , particleAge
+  , particleType
   , mkParticle
   , rotateCW
   , rotateCCW
