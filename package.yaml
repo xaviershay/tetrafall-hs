@@ -28,6 +28,7 @@ dependencies:
 - microlens-platform
 - mtl
 - random
+- time
 - unordered-containers
 - vector
 - vty >= 6.2

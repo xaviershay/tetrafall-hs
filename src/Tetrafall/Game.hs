@@ -6,7 +6,7 @@ import qualified Tetrafall.Randomizer
 import qualified Tetrafall.Scoring
 import Lens.Micro.Platform
 
-
+import Data.Time.Clock (NominalDiffTime)
 import qualified Data.HashMap.Strict as HashMap
 
 import System.Random (randomR, mkStdGen)
@@ -102,12 +102,22 @@ applyRotation rotateFunc game =
 
 apply :: Action -> Game -> Game
 apply ActionStep = step
+apply (ActionTick dt) = applyTick dt
 apply ActionLeft = applyMovement moveLeft
 apply ActionRight = applyMovement moveRight
 apply ActionSoftDrop = applyMovement moveDown
 apply ActionRotateCW = applyRotation rotateCW
 apply ActionRotateCCW = applyRotation rotateCCW
 apply ActionHardDrop = applyHardDrop
+
+applyTick :: NominalDiffTime -> Game -> Game
+applyTick dt game =
+  let newAccum = game ^. gameStepAccum + dt
+      stepSize = game ^. gameStepSize
+      gameWithTime = game & gameTime %~ (+ dt)
+  in if newAccum >= stepSize
+     then step (gameWithTime & gameStepAccum .~ (newAccum - stepSize))
+     else gameWithTime & gameStepAccum .~ newAccum
 
 applyHardDrop :: Game -> Game
 applyHardDrop game =
@@ -178,4 +188,7 @@ defaultGame =
     , _windowSize = (0, 0)
     , _randomizerEnv = updatedRandomizerEnv
     , _gameScoreAlgorithm = Tetrafall.Scoring.simple
+    , _gameTime = 0
+    , _gameStepSize = 0.5
+    , _gameStepAccum = 0
     }

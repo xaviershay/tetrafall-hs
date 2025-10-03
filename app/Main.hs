@@ -11,6 +11,8 @@ import qualified Tetrafall.KeyboardConfig as KeyConfig
 import qualified Data.Vector as V
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
+import Data.Time.Clock (NominalDiffTime, getCurrentTime, diffUTCTime)
+import Data.IORef (newIORef, readIORef, writeIORef)
 
 import Lens.Micro.Platform
 
@@ -30,7 +32,7 @@ import Graphics.Vty.Config (VtyUserConfig(..), defaultConfig)
 import Graphics.Vty.Attributes.Color (ColorMode(..))
 
 data CustomEvent =
-      Tick
+      Tick NominalDiffTime
     | AnimationUpdate (EventM () St ())
 
 data St = St
@@ -185,27 +187,14 @@ appEvent (VtyEvent (V.EvKey key [])) = do
             modify (stGame %~ apply action)
             checkAndGenerateScoreAnimation oldScore
         Nothing -> return ()
-appEvent (AppEvent Tick) = do
+appEvent (AppEvent (Tick dt)) = do
     st <- get
-    let game = st ^. stGame
-        oldScore = game ^. score
-        pieceInfo = debugPieceInfo (game ^. currentPiece)
-        finalGrid = getFinalGrid game
-        gridString = debugGridToString finalGrid
-        debugInfo = "=== TICK ===\n" ++ 
-                   pieceInfo ++ "\n" ++
-                   "Score: " ++ show (game ^. score) ++ "\n" ++
-                   "Slide State: " ++ show (game ^. slideState) ++ "\n" ++
-                   "Inter: " ++ show (st ^. stIntermediaryScores) ++ "\n" ++
-                   "Grid:\n" ++ gridString ++ "\n"
-    modify (stGame %~ apply ActionStep)
-    
+    let oldScore = st ^. stGame ^. score
+    modify (stGame %~ apply (ActionTick dt))
     checkAndGenerateScoreAnimation oldScore
-    
     newGame <- gets (^. stGame)
     let locations = map (\p -> let (x, y) = p ^. particleLocation in Location (round x, round y)) (newGame ^. particles)
     mapM_ startParticleAnimation locations
-    return ()
 
 appEvent _ = return ()
 
@@ -281,9 +270,15 @@ app =
 main :: IO ()
 main = do
     chan <- newBChan 10
+    lastTimeRef <- newIORef =<< getCurrentTime
     _ <- forkIO $ forever $ do
-        writeBChan chan Tick
-        threadDelay 200000 -- decides how fast your game moves
+        let tickIntervalMs = 1 * 1000
+        threadDelay tickIntervalMs
+        currentTime <- getCurrentTime
+        lastTime <- readIORef lastTimeRef
+        let elapsed = diffUTCTime currentTime lastTime
+        writeIORef lastTimeRef currentTime
+        writeBChan chan (Tick elapsed)
     let buildVty = mkVty $ defaultConfig { configPreferredColorMode = Just FullColor }
     initialVty <- buildVty
     

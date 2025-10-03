@@ -44,6 +44,7 @@ library
     , microlens-platform
     , mtl
     , random
+    , time
     , unordered-containers
     , vector
     , vty >=6.2
@@ -64,6 +65,7 @@ executable tetrafall
     , mtl
     , random
     , tetrafall-hs
+    , time
     , unordered-containers
     , vector
     , vty >=6.2
@@ -93,6 +95,7 @@ test-suite tetrafall-hs-test
     , tasty
     , tasty-hunit
     , tetrafall-hs
+    , time
     , unordered-containers
     , vector
     , vty >=6.2

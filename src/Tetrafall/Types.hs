@@ -27,6 +27,9 @@ module Tetrafall.Types
   , particles
   , windowSize
   , gameScoreAlgorithm
+  , gameTime
+  , gameStepSize
+  , gameStepAccum
   , tetrominoType
   , position
   , orientation
@@ -42,8 +45,10 @@ module Tetrafall.Types
 
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Hashable (Hashable(..))
+import Data.Time.Clock (NominalDiffTime)
 import Lens.Micro.Platform
 import System.Random (StdGen)
+
 
 import Tetrafall.Types.Coordinate
 import Tetrafall.Types.Grid
@@ -109,6 +114,7 @@ data Action =
   | ActionSoftDrop
   | ActionHardDrop
   | ActionStep
+  | ActionTick NominalDiffTime
   deriving (Eq, Show)
 
 data ScoreEvent = ScoreEvent
@@ -130,6 +136,9 @@ data Game = Game
   , _particles :: [Particle]
   , _windowSize :: (Int, Int)
   , _gameScoreAlgorithm :: ScoringAlgorithm
+  , _gameTime :: NominalDiffTime
+  , _gameStepSize :: NominalDiffTime
+  , _gameStepAccum :: NominalDiffTime
   }
 
 data SlideState = 
