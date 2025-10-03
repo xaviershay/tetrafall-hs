@@ -97,14 +97,21 @@ data Tetromino = Tetromino
   } deriving (Eq, Show)
 makeLenses ''Tetromino
 
+data ParticleType = ParticleStar
+
 data Particle = Particle
   { _particleLocation :: (Float, Float)
   , _particleAge :: Int
+  , _particleType :: ParticleType
   }
 makeLenses ''Particle
 
 mkParticle :: Particle
-mkParticle = Particle { _particleLocation = (0.0, 0.0), _particleAge = 0 }
+mkParticle = Particle
+  { _particleLocation = (0.0, 0.0)
+  , _particleAge = 0
+  , _particleType = ParticleStar
+  }
 
 data Action =
     ActionLeft
