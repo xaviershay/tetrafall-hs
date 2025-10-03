@@ -14,6 +14,12 @@ module Tetrafall.Types
   , ScoringAlgorithm
   , Randomizer
   , RandomizerEnv(..)
+  , ParticleType(..)
+  , Vec2(..)
+  , ParticleLifeState(..)
+  , FireworkParticleConfig(..)
+  , FireworkConfig(..)
+  , FireworkParticle(..)
   , defaultTetrominoMap
   , TetrominoMap
   , dimensions
@@ -41,11 +47,25 @@ module Tetrafall.Types
   , randomizerEnv
   , scoreLines
   , scoreLevel
+  , vec2X
+  , vec2Y
+  , fpcInitPos
+  , fpcInitVel
+  , fpcTrailLength
+  , fpcLifeTime
+  , fpcColor
+  , fpPos
+  , fpVel
+  , fpTrail
+  , fpLifeState
+  , fpTimeElapsed
+  , fpConfig
   ) where
 
 import Data.HashMap.Strict (HashMap, fromList)
 import Data.Hashable (Hashable(..))
 import Data.Time.Clock (NominalDiffTime)
+import Data.Word (Word8)
 import Lens.Micro.Platform
 import System.Random (StdGen)
 
@@ -97,7 +117,50 @@ data Tetromino = Tetromino
   } deriving (Eq, Show)
 makeLenses ''Tetromino
 
-data ParticleType = ParticleStar
+data Vec2 = Vec2
+  { _vec2X :: Float
+  , _vec2Y :: Float
+  } deriving (Eq, Show)
+makeLenses ''Vec2
+
+data ParticleLifeState = 
+    ParticleAlive 
+  | ParticleDeclining 
+  | ParticleDying 
+  | ParticleDead
+  deriving (Eq, Show)
+
+data FireworkParticleConfig = FireworkParticleConfig
+  { _fpcInitPos :: Vec2
+  , _fpcInitVel :: Vec2
+  , _fpcTrailLength :: Int
+  , _fpcLifeTime :: NominalDiffTime
+  , _fpcColor :: (Word8, Word8, Word8)
+  } deriving (Eq, Show)
+makeLenses ''FireworkParticleConfig
+
+data FireworkConfig = FireworkConfig
+  { _fcGravityScale :: Float
+  , _fcAirResistanceScale :: Float
+  , _fcAdditionalForce :: FireworkParticle -> Vec2
+  , _fcGradientScale :: Float -> Float
+  , _fcEnableGradient :: Bool
+  }
+
+data FireworkParticle = FireworkParticle
+  { _fpPos :: Vec2
+  , _fpVel :: Vec2
+  , _fpTrail :: [Vec2]
+  , _fpLifeState :: ParticleLifeState
+  , _fpTimeElapsed :: NominalDiffTime
+  , _fpConfig :: FireworkParticleConfig
+  } deriving (Eq, Show)
+makeLenses ''FireworkParticle
+
+data ParticleType = 
+    ParticleStar
+  | ParticleFirework FireworkParticle
+  deriving (Eq, Show)
 
 data Particle = Particle
   { _particleLocation :: (Float, Float)

@@ -1,5 +1,13 @@
 # Firework Particle System Integration Plan
 
+## Progress Tracker
+- [x] Phase 1: Core Data Types ✅ Complete
+- [ ] Phase 2: Physics Module
+- [ ] Phase 3: Firework Generation
+- [ ] Phase 4: Game Integration
+- [ ] Phase 5: Rendering
+- [ ] Testing
+
 ## Overview
 Port the firework particle system from [firework-rs](https://github.com/Wayoung7/firework-rs) to the Tetrafall Haskell game to create a new `ParticleFirework` type with realistic physics-based animation.
 
