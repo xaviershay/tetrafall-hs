@@ -198,7 +198,10 @@ appEvent (AppEvent (Tick dt)) = do
     modify (stGame %~ apply (ActionTick dt))
     checkAndGenerateScoreAnimation oldScore
     newGame <- gets (^. stGame)
-    let locations = map (\p -> let (x, y) = p ^. particleLocation in Location (round x, round y)) (newGame ^. particles)
+    let starParticles = filter (\p -> case p ^. particleType of
+                                        ParticleStar -> True
+                                        _ -> False) (newGame ^. particles)
+    let locations = map (\p -> let (x, y) = p ^. particleLocation in Location (round x, round y)) starParticles
     mapM_ startParticleAnimation locations
 
 appEvent _ = return ()
