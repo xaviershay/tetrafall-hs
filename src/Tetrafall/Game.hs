@@ -1,4 +1,4 @@
-module Tetrafall.Game (defaultGame, apply, getTetrominoGrid) where
+module Tetrafall.Game (defaultGame, apply, getTetrominoGrid, spawnMultipleFireworks) where
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid

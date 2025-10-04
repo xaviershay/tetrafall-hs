@@ -4,7 +4,7 @@ module Main (main) where
 
 import Tetrafall.Types
 import Tetrafall.Types.Grid (toVector, emptyGrid, overlay, toList, double, makeDense, crop)
-import Tetrafall.Game (apply, getTetrominoGrid, defaultGame)
+import Tetrafall.Game (apply, getTetrominoGrid, defaultGame, spawnMultipleFireworks)
 import Tetrafall.Animation
 import qualified Tetrafall.KeyboardConfig as KeyConfig
 
@@ -130,6 +130,34 @@ drawParticleAnimation :: St -> (Location, A.Animation St ()) -> Widget ()
 drawParticleAnimation st (location, animation) =
     translateBy location $ A.renderAnimation (const $ withDefAttr particleAttr $ str "*") st (Just animation)
 
+drawFireworkParticles :: St -> [Widget ()]
+drawFireworkParticles st =
+    let game = st ^. stGame
+        fireworkParticles = filter isFireworkParticle (game ^. particles)
+    in map drawFireworkParticle fireworkParticles
+  where
+    isFireworkParticle p = case p ^. particleType of
+        ParticleFirework _ -> True
+        _ -> False
+
+drawFireworkParticle :: Particle -> Widget ()
+drawFireworkParticle particle = case particle ^. particleType of
+    ParticleFirework fp ->
+        let Vec2 x y = _fpPos fp
+            location = Location (round x, round y)
+            char = getParticleChar (_fpLifeState fp)
+            (r, g, b) = _fpcColor (_fpConfig fp)
+            color = V.rgbColor (fromIntegral r :: Int) (fromIntegral g :: Int) (fromIntegral b :: Int)
+        in translateBy location $ withAttr (attrName "firework") $ 
+           modifyDefAttr (`V.withForeColor` color) $ str [char]
+    _ -> emptyWidget
+
+getParticleChar :: ParticleLifeState -> Char
+getParticleChar ParticleAlive = '●'
+getParticleChar ParticleDeclining = '○'
+getParticleChar ParticleDying = '·'
+getParticleChar ParticleDead = ' '
+
 formatCell :: Cell -> Widget ()
 formatCell Empty = str " "
 formatCell (TetrominoCell S) = withDefAttr sBlockAttr $ str "█"
@@ -182,6 +210,16 @@ appEvent (AppEvent (AnimationUpdate act)) = do
         [] -> return ()
 appEvent (VtyEvent (V.EvKey V.KEsc [])) = halt
 appEvent (VtyEvent (V.EvKey (V.KChar 'q') [])) = halt
+appEvent (VtyEvent (V.EvKey (V.KChar '1') [])) = do
+    -- Manually trigger fireworks for testing
+    st <- get
+    let game = st ^. stGame
+        (windowWidth, windowHeight) = game ^. windowSize
+        currentRng = game ^. rng
+        existingParticles = game ^. particles
+        (newParticles, newRng) = spawnMultipleFireworks 3 windowWidth windowHeight currentRng existingParticles
+    modify (stGame . particles .~ newParticles)
+    modify (stGame . rng .~ newRng)
 appEvent (VtyEvent (V.EvResize width height)) = do
     modify (stGame . windowSize .~ (width, height))
 appEvent (VtyEvent (V.EvKey key [])) = do
@@ -248,6 +286,7 @@ attributes :: AttrMap
 attributes = attrMap (V.white `on` rgb 0 0 0) $
     [ (backgroundAttr, bg (rgb 0 0 0))
     , (particleAttr, fg V.white)
+    , (attrName "firework", fg V.white)  -- Base firework attr (color set per particle)
     , (borderAttr, fg (rgb 180 180 180))  -- dull white
     , (scoringTextAttr, fg V.white)
     -- Tetromino colors
@@ -268,6 +307,7 @@ app =
     App { appDraw = \s -> 
             [ playfieldLayer s
             ] ++ drawParticleLayerList s
+            ++ drawFireworkParticles s
             ++ [backgroundLayer s]
         , appHandleEvent = appEvent
         , appStartEvent = return ()
