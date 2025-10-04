@@ -145,18 +145,31 @@ drawFireworkParticle particle = case particle ^. particleType of
     ParticleFirework fp ->
         let Vec2 x y = _fpPos fp
             location = Location (round x, round y)
-            char = getParticleChar (_fpLifeState fp)
+            charSet = getParticleChars (_fpLifeState fp)
+            charIndex = (abs (round x + round y)) `mod` length charSet
+            char = charSet !! charIndex
             (r, g, b) = _fpcColor (_fpConfig fp)
-            color = V.rgbColor (fromIntegral r :: Int) (fromIntegral g :: Int) (fromIntegral b :: Int)
+            -- Apply brightness based on lifecycle
+            brightness = getParticleBrightness (_fpLifeState fp)
+            r' = round (fromIntegral r * brightness)
+            g' = round (fromIntegral g * brightness)
+            b' = round (fromIntegral b * brightness)
+            color = V.rgbColor (r' :: Int) (g' :: Int) (b' :: Int)
         in translateBy location $ withAttr (attrName "firework") $ 
            modifyDefAttr (`V.withForeColor` color) $ str [char]
     _ -> emptyWidget
 
-getParticleChar :: ParticleLifeState -> Char
-getParticleChar ParticleAlive = '●'
-getParticleChar ParticleDeclining = '○'
-getParticleChar ParticleDying = '·'
-getParticleChar ParticleDead = ' '
+getParticleChars :: ParticleLifeState -> String
+getParticleChars ParticleAlive = "●⬤◉⦿◎⊙⊚⊛⊗⊕✪✦✧✹✺✻✼✽❂❉❊❋★✯✰"
+getParticleChars ParticleDeclining = "○◌◍◎◐◑◒◓◔◕⊚⊛⊙⦾⦿*◦•∘"
+getParticleChars ParticleDying = "·⋅∙˙჻·.⸰⸳·∘˙"
+getParticleChars ParticleDead = " "
+
+getParticleBrightness :: ParticleLifeState -> Float
+getParticleBrightness ParticleAlive = 1.0
+getParticleBrightness ParticleDeclining = 0.6
+getParticleBrightness ParticleDying = 0.3
+getParticleBrightness ParticleDead = 0.0
 
 formatCell :: Cell -> Widget ()
 formatCell Empty = str " "
