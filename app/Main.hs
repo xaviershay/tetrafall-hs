@@ -46,7 +46,7 @@ makeLenses ''St
 
 -- Get the score currently being displayed (head of intermediary list or game score)
 getDisplayedScore :: St -> Int
-getDisplayedScore st = 
+getDisplayedScore st =
     case st ^. stIntermediaryScores of
         (x:_) -> x
         [] -> st ^. stGame . score
@@ -81,15 +81,15 @@ renderNextPiece :: Game -> Widget ()
 renderNextPiece game =
     case game ^. gameNextPieces of
         [] -> withDefAttr borderAttr $ border $ hLimit 10 $ vLimit 2 $ fill ' '
-        (nextType:_) -> 
+        (nextType:_) ->
             let nextPiece = Tetromino nextType (2, 1) North
                 nextGrid = getTetrominoGrid nextPiece
                 previewGrid = double $ makeDense (5, 2) Empty `overlay` nextGrid
                 finalPreviewGrid = if ((fst . dimensions) nextGrid `mod` 2 == 0) then crop ((1, 0), (9, 1)) previewGrid else previewGrid
-                previewWidget = vBox $ V.toList $ V.map (\row -> 
+                previewWidget = vBox $ V.toList $ V.map (\row ->
                     hBox $ V.toList $ V.map formatCell row
                     ) (toVector finalPreviewGrid)
-            in withDefAttr borderAttr $ borderWithLabel (str "Next") $ hLimit 10 $ vLimit 2 $ 
+            in withDefAttr borderAttr $ borderWithLabel (str "Next") $ hLimit 10 $ vLimit 2 $
                vCenter $ hCenter $ previewWidget
 
 drawParticleLayerList :: St -> [Widget ()]
@@ -104,17 +104,17 @@ playfieldLayer st =
       game = st ^. stGame
       g = getFinalGrid game
       s = getDisplayedScore st
-      
+
       -- Main playfield
       playfield = withDefAttr borderAttr $ border $
                   foldl (<=>) (str "") (V.map (\row -> foldl (<+>) (str "") (V.map formatCell row)) (toVector (double g)))
-      
+
       -- Right sidebar with next piece, score, and time
       timeSeconds = realToFrac (game ^. gameTime) :: Double
       timeStr = printf "%.2f" timeSeconds
-      sidebar = vBox 
+      sidebar = vBox
                 [ renderNextPiece game
-                , withDefAttr borderAttr $ borderWithLabel (str "Score") $ 
+                , withDefAttr borderAttr $ borderWithLabel (str "Score") $
                   hLimit 10 $ padLeft Max $ withDefAttr scoringTextAttr $ str (show s)
                 , withDefAttr borderAttr $ borderWithLabel (str "Time") $
                   hLimit 10 $ padLeft Max $ withDefAttr scoringTextAttr $ str timeStr
@@ -130,34 +130,49 @@ drawParticleAnimation :: St -> (Location, A.Animation St ()) -> Widget ()
 drawParticleAnimation st (location, animation) =
     translateBy location $ A.renderAnimation (const $ withDefAttr particleAttr $ str "*") st (Just animation)
 
-drawFireworkParticles :: St -> [Widget ()]
-drawFireworkParticles st =
+buildFireworkLayer :: St -> Widget ()
+buildFireworkLayer st =
     let game = st ^. stGame
+        (windowWidth, windowHeight) = game ^. windowSize
         fireworkParticles = filter isFireworkParticle (game ^. particles)
-    in map drawFireworkParticle fireworkParticles
+        particleMap = buildParticleMap fireworkParticles
+    in renderParticleMap windowWidth windowHeight particleMap
   where
     isFireworkParticle p = case p ^. particleType of
         ParticleFirework _ -> True
         _ -> False
 
-drawFireworkParticle :: Particle -> Widget ()
-drawFireworkParticle particle = case particle ^. particleType of
-    ParticleFirework fp ->
-        let Vec2 x y = _fpPos fp
-            location = Location (round x, round y)
-            charSet = getParticleChars (_fpLifeState fp)
-            charIndex = (abs (round x + round y)) `mod` length charSet
-            char = charSet !! charIndex
-            (r, g, b) = _fpcColor (_fpConfig fp)
-            -- Apply brightness based on lifecycle
-            brightness = getParticleBrightness (_fpLifeState fp)
-            r' = round (fromIntegral r * brightness)
-            g' = round (fromIntegral g * brightness)
-            b' = round (fromIntegral b * brightness)
-            color = V.rgbColor (r' :: Int) (g' :: Int) (b' :: Int)
-        in translateBy location $ withAttr (attrName "firework") $ 
-           modifyDefAttr (`V.withForeColor` color) $ str [char]
-    _ -> emptyWidget
+buildParticleMap :: [Particle] -> M.Map (Int, Int) (Char, V.Color)
+buildParticleMap particles =
+    foldl insertParticle M.empty particles
+  where
+    insertParticle acc particle = case particle ^. particleType of
+        ParticleFirework fp ->
+            let Vec2 x y = _fpPos fp
+                xInt = round x
+                yInt = round y
+                charSet = getParticleChars (_fpLifeState fp)
+                charIndex = (abs xInt + abs yInt) `mod` length charSet
+                char = charSet !! charIndex
+                (r, g, b) = _fpcColor (_fpConfig fp)
+                brightness = getParticleBrightness (_fpLifeState fp)
+                r' = round (fromIntegral r * brightness)
+                g' = round (fromIntegral g * brightness)
+                b' = round (fromIntegral b * brightness)
+                color = V.rgbColor (r' :: Int) (g' :: Int) (b' :: Int)
+            in M.insert (xInt, yInt) (char, color) acc
+        _ -> acc
+
+renderParticleMap :: Int -> Int -> M.Map (Int, Int) (Char, V.Color) -> Widget ()
+renderParticleMap windowWidth windowHeight particleMap =
+    let rows = [0..windowHeight - 1]
+        cols = [0..windowWidth - 1]
+        renderRow y = hBox [renderCell x y | x <- cols]
+        renderCell x y = case M.lookup (x, y) particleMap of
+            Just (char, color) -> withAttr (attrName "firework") $
+                                  modifyDefAttr (`V.withForeColor` color) $ str [char]
+            Nothing -> str " "
+    in vBox [renderRow y | y <- rows]
 
 getParticleChars :: ParticleLifeState -> String
 getParticleChars ParticleAlive = "●⬤◉⦿◎⊙⊚⊛⊗⊕✪✦✧✹✺✻✼✽❂❉❊❋★✯✰"
@@ -203,11 +218,11 @@ debugGridToString g =
 
 debugPieceInfo :: Maybe Tetromino -> String
 debugPieceInfo Nothing = "No current piece"
-debugPieceInfo (Just piece) = 
+debugPieceInfo (Just piece) =
     let pieceGrid = getTetrominoGrid piece
         gridCoords = map fst (toList pieceGrid)
-    in "Piece: " ++ show (piece ^. tetrominoType) ++ 
-       " at " ++ show (piece ^. position) ++ 
+    in "Piece: " ++ show (piece ^. tetrominoType) ++
+       " at " ++ show (piece ^. position) ++
        " facing " ++ show (piece ^. orientation) ++
        " grid coords: " ++ show gridCoords
 
@@ -217,7 +232,7 @@ appEvent (AppEvent (AnimationUpdate act)) = do
     -- Handle score animation - just pop the next score from the list
     st <- get
     let intermediaryScores = st ^. stIntermediaryScores
-        
+
     case intermediaryScores of
         (_:xs) -> modify (stIntermediaryScores .~ xs)
         [] -> return ()
@@ -317,10 +332,10 @@ attributes = attrMap (V.white `on` rgb 0 0 0) $
 
 app :: App St CustomEvent ()
 app =
-    App { appDraw = \s -> 
+    App { appDraw = \s ->
             [ playfieldLayer s
+            , buildFireworkLayer s
             ] ++ drawParticleLayerList s
-            ++ drawFireworkParticles s
             ++ [backgroundLayer s]
         , appHandleEvent = appEvent
         , appStartEvent = return ()
@@ -342,11 +357,11 @@ main = do
         writeBChan chan (Tick elapsed)
     let buildVty = mkVty $ defaultConfig { configPreferredColorMode = Just FullColor }
     initialVty <- buildVty
-    
+
     -- Get initial window size
     let output = V.outputIface initialVty
     (width, height) <- V.displayBounds output
-    
+
     mgr <- A.startAnimationManager 50 chan AnimationUpdate
 
     let gameWithWindowSize = defaultGame & windowSize .~ (width, height)
@@ -357,7 +372,7 @@ main = do
           , _stIntermediaryScores = []
           }
 
-    void $ customMain initialVty buildVty (Just chan) app defaultState 
+    void $ customMain initialVty buildVty (Just chan) app defaultState
 
 clip1 :: A.Clip a ()
 clip1 =
@@ -369,4 +384,3 @@ clip1 =
     , withDefAttr particleAttr $ str "~"
     , withDefAttr particleAttr $ str "."
     ]
-
