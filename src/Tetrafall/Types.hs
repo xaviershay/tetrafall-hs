@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Tetrafall.Types 
+module Tetrafall.Types
   ( Coordinate
   , TetrominoType(..)
   , Orientation(..)
@@ -30,6 +30,8 @@ module Tetrafall.Types
   , gameTime
   , gameStepSize
   , gameStepAccum
+  , gameParticleSpawnAccum
+  , gameParticleSpawnRate
   , tetrominoType
   , position
   , orientation
@@ -84,7 +86,7 @@ rotateCW East = South
 rotateCW South = West
 rotateCW West = North
 
-rotateCCW :: Orientation -> Orientation  
+rotateCCW :: Orientation -> Orientation
 rotateCCW North = West
 rotateCCW West = South
 rotateCCW South = East
@@ -139,9 +141,11 @@ data Game = Game
   , _gameTime :: NominalDiffTime
   , _gameStepSize :: NominalDiffTime
   , _gameStepAccum :: NominalDiffTime
+  , _gameParticleSpawnAccum :: NominalDiffTime
+  , _gameParticleSpawnRate :: NominalDiffTime
   }
 
-data SlideState = 
+data SlideState =
     CanFall  -- Piece can still fall normally
   | Sliding Coordinate  -- Piece cannot fall, tracking position for slide detection
   | ShouldLock  -- Piece should be locked immediately (e.g., after hard drop)

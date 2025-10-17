@@ -12,10 +12,10 @@ import qualified Data.HashMap.Strict as HashMap
 import System.Random (randomR, mkStdGen)
 
 step :: Game -> Game
-step = handleCurrentPiece . spawnNewParticle
+step = handleCurrentPiece
 
-spawnNewParticle :: Game -> Game
-spawnNewParticle game = 
+spawnParticle :: Game -> Game
+spawnParticle game =
     let (windowWidth, windowHeight) = game ^. windowSize
         (randX, rng1) = randomR (0, windowWidth - 1) (game ^. rng)
         (randY, rng2) = randomR (0, windowHeight - 1) rng1
@@ -112,12 +112,24 @@ apply ActionHardDrop = applyHardDrop
 
 applyTick :: NominalDiffTime -> Game -> Game
 applyTick dt game =
-  let newAccum = game ^. gameStepAccum + dt
+  let newStepAccum = game ^. gameStepAccum + dt
+      newParticleAccum = game ^. gameParticleSpawnAccum + dt
       stepSize = game ^. gameStepSize
+      particleSpawnRate = game ^. gameParticleSpawnRate
       gameWithTime = game & gameTime %~ (+ dt)
-  in if newAccum >= stepSize
-     then step (gameWithTime & gameStepAccum .~ (newAccum - stepSize))
-     else gameWithTime & gameStepAccum .~ newAccum
+
+      (gameAfterStep, finalStepAccum) =
+        if newStepAccum >= stepSize
+        then (step gameWithTime, newStepAccum - stepSize)
+        else (gameWithTime, newStepAccum)
+
+      (gameAfterParticle, finalParticleAccum) =
+        if newParticleAccum >= particleSpawnRate
+        then (spawnParticle gameAfterStep, newParticleAccum - particleSpawnRate)
+        else (gameAfterStep, newParticleAccum)
+
+  in gameAfterParticle & gameStepAccum .~ finalStepAccum
+                       & gameParticleSpawnAccum .~ finalParticleAccum
 
 applyHardDrop :: Game -> Game
 applyHardDrop game =
@@ -191,4 +203,6 @@ defaultGame =
     , _gameTime = 0
     , _gameStepSize = 0.5
     , _gameStepAccum = 0
+    , _gameParticleSpawnAccum = 0
+    , _gameParticleSpawnRate = 0.1
     }
