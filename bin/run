@@ -1,6 +1,31 @@
 #!/bin/bash
 
-set -ex
+set -e
 
-stack build
-stack exec tetrafall
+PROFILE=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --profile)
+      PROFILE=true
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Usage: $0 [--profile]"
+      exit 1
+      ;;
+  esac
+done
+
+if [ "$PROFILE" = true ]; then
+  echo "Building with profiling enabled..."
+  set -x
+  stack build --executable-profiling --ghc-options="-fprof-auto -rtsopts"
+  stack exec --profile -- tetrafall +RTS -p -RTS
+else
+  set -x
+  stack build
+  stack exec tetrafall
+fi
